@@ -1,0 +1,26 @@
+# Environment
+.env
+*.pyc
+__pycache__/
+.venv/
+venv/
+
+# Data files (too large for git)
+data/*.mdb
+data/*.MDB
+data/*.zip
+*.mdb
+*.MDB
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+*.egg-info/
+dist/
+build/
