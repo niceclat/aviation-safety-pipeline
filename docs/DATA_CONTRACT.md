@@ -1,5 +1,14 @@
 # Data Contract — Source to Bronze to Silver Mapping
 
+| | |
+|---|---|
+| **Version** | 1.0.0 |
+| **Date** | 2026-04-13 |
+| **Owner** | Data Engineering |
+| **Code** | `src/contracts.py` |
+
+> When updating mappings, bump the version in both this file and `src/contracts.py`.
+
 ## Overview
 
 Three NTSB data sources are ingested into isolated bronze schemas, then unified into a canonical silver model.
