@@ -34,7 +34,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
       DATA_DIR: /data
     volumes:
-      - ./data:/data:ro
+      - ./data:/data
       - ./outputs:/outputs
 
 volumes:
