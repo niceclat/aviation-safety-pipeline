@@ -2,6 +2,8 @@ psycopg2-binary==2.9.9
 pandas==2.2.2
 python-dotenv==1.0.1
 sqlalchemy==2.0.30
-nltk==3.9.1
 scikit-learn==1.5.1
 tqdm==4.66.4
+sentence-transformers==3.0.1
+faiss-cpu==1.8.0
+pgvector==0.3.2
