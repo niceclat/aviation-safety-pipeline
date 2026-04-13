@@ -1,0 +1,501 @@
+ev_id,aircraft_key,failure_categories,primary_category,n_categories,text_severity_score,has_engine_failure,has_weather_factor,has_human_factors,has_fire,has_structural,has_maintenance,narrative_length
+20001211X15972,1,['weather'],weather,1,5,False,True,False,False,False,False,23414
+20001211X15973,1,['weather'],weather,1,5,False,True,False,False,False,False,17286
+20001211X12053,1,"['landing_gear', 'weather']",landing_gear,2,5,False,True,False,False,False,False,23702
+20001211X12497,1,['engine_failure'],engine_failure,1,1,True,False,False,False,False,False,3563
+20001211X12259,1,['human_factors'],human_factors,1,1,False,False,True,False,False,False,5425
+20001211X12737,1,"['engine_failure', 'landing_gear', 'fuel_related']",engine_failure,3,4,True,False,False,False,False,False,14487
+20001211X13021,1,"['engine_failure', 'fuel_related']",engine_failure,2,4,True,False,False,False,False,False,11650
+20001211X13280,1,[],,0,3,False,False,False,False,False,False,6212
+20001211X12739,1,['maintenance'],maintenance,1,2,False,False,False,False,False,True,1143
+20001211X13284,1,"['engine_failure', 'bird_strike']",engine_failure,2,4,True,False,False,False,False,False,2612
+20001211X12056,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,3779
+20001211X12264,1,[],,0,2,False,False,False,False,False,False,2693
+20001211X12752,1,['engine_failure'],engine_failure,1,3,True,False,False,False,False,False,3724
+20001211X12269,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1329
+20001211X12753,1,[],,0,1,False,False,False,False,False,False,2158
+20001211X12498,1,"['engine_failure', 'human_factors']",engine_failure,2,4,True,False,True,False,False,False,4517
+20001211X12276,1,[],,0,3,False,False,False,False,False,False,1886
+20001211X12505,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1334
+20001211X12510,1,['weather'],weather,1,2,False,True,False,False,False,False,2964
+20001211X12512,1,[],,0,3,False,False,False,False,False,False,1000
+20001211X12519,1,[],,0,1,False,False,False,False,False,False,2891
+20001211X12749,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,5472
+20001211X13023,1,[],,0,2,False,False,False,False,False,False,1019
+20001211X13031,1,[],,0,1,False,False,False,False,False,False,7390
+20001211X13033,1,[],,0,2,False,False,False,False,False,False,1894
+20001211X13039,1,[],,0,2,False,False,False,False,False,False,3659
+20001211X13044,1,[],,0,3,False,False,False,False,False,False,1445
+20001206X01899,1,['fire'],fire,1,5,False,False,False,True,False,False,7771
+20001211X13296,1,['landing_gear'],landing_gear,1,1,False,False,False,False,False,False,1554
+20001211X13499,1,['fuel_related'],fuel_related,1,5,False,False,False,False,False,False,25800
+20001206X01412,1,"['weather', 'fire']",weather,2,5,False,True,False,True,False,False,18355
+20001206X01633,1,"['landing_gear', 'fuel_related', 'hydraulic', 'human_factors']",landing_gear,4,5,False,False,True,False,False,False,16615
+20001206X01634,1,['landing_gear'],landing_gear,1,4,False,False,False,False,False,False,7803
+20001206X01635,1,[],,0,3,False,False,False,False,False,False,3519
+20001206X01897,1,"['weather', 'structural', 'fire']",weather,3,5,False,True,False,True,True,False,13046
+20001206X01900,1,"['landing_gear', 'weather', 'fire', 'human_factors']",landing_gear,4,5,False,True,True,True,False,False,12106
+20001211X13673,1,['landing_gear'],landing_gear,1,2,False,False,False,False,False,False,3155
+20001206X00828,1,['engine_failure'],engine_failure,1,3,True,False,False,False,False,False,1620
+20001206X01636,1,[],,0,1,False,False,False,False,False,False,1684
+20001207X03836,1,[],,0,3,False,False,False,False,False,False,2223
+20001214X35619,1,[],,0,1,False,False,False,False,False,False,0
+20001211X13675,1,[],,0,3,False,False,False,False,False,False,784
+20001211X13809,1,[],,0,3,False,False,False,False,False,False,1779
+20001214X35807,1,[],,0,1,False,False,False,False,False,False,0
+20001211X13814,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,2156
+20001206X00690,1,[],,0,3,False,False,False,False,False,False,2194
+20001206X00832,1,[],,0,4,False,False,False,False,False,False,1995
+20001206X01017,1,['engine_failure'],engine_failure,1,4,True,False,False,False,False,False,3245
+20001206X01018,1,"['engine_failure', 'fuel_related']",engine_failure,2,4,True,False,False,False,False,False,1940
+20001206X01903,1,[],,0,3,False,False,False,False,False,False,2142
+20001206X01192,1,['landing_gear'],landing_gear,1,1,False,False,False,False,False,False,1189
+20001206X01418,1,[],,0,1,False,False,False,False,False,False,1441
+20001206X01639,1,"['engine_failure', 'human_factors']",engine_failure,2,4,True,False,True,False,False,False,4578
+20001206X01640,1,[],,0,3,False,False,False,False,False,False,1298
+20001206X01643,1,['landing_gear'],landing_gear,1,1,False,False,False,False,False,False,1698
+20001206X01646,1,['engine_failure'],engine_failure,1,3,True,False,False,False,False,False,3405
+20001206X01651,1,[],,0,3,False,False,False,False,False,False,4020
+20001206X01907,1,[],,0,3,False,False,False,False,False,False,1601
+20001206X01909,1,[],,0,1,False,False,False,False,False,False,1292
+20001206X02160,1,[],,0,1,False,False,False,False,False,False,1794
+20001206X01913,1,[],,0,3,False,False,False,False,False,False,1314
+20001206X01926,1,['weather'],weather,1,1,False,True,False,False,False,False,5653
+20001206X02167,1,[],,0,3,False,False,False,False,False,False,1195
+20001206X02171,1,[],,0,1,False,False,False,False,False,False,1624
+20001206X02536,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,18467
+20001206X02666,1,"['landing_gear', 'weather']",landing_gear,2,5,False,True,False,False,False,False,18756
+20001206X02667,1,['weather'],weather,1,1,False,True,False,False,False,False,6267
+20001207X03576,1,"['landing_gear', 'weather']",landing_gear,2,5,False,True,False,False,False,False,10907
+20001207X03828,1,"['landing_gear', 'weather', 'fire']",landing_gear,3,5,False,True,False,True,False,False,19390
+20001207X04116,1,"['landing_gear', 'weather']",landing_gear,2,5,False,True,False,False,False,False,6765
+20001206X02668,1,['weather'],weather,1,5,False,True,False,False,False,False,5234
+20001208X06670,1,[],,0,1,False,False,False,False,False,False,1684
+20001207X04119,1,['human_factors'],human_factors,1,2,False,False,True,False,False,False,2030
+20001207X04398,1,['human_factors'],human_factors,1,1,False,False,True,False,False,False,1765
+20001206X02369,1,[],,0,1,False,False,False,False,False,False,1285
+20001206X02538,1,[],,0,3,False,False,False,False,False,False,1775
+20001206X02540,1,[],,0,1,False,False,False,False,False,False,2633
+20001206X02541,1,[],,0,3,False,False,False,False,False,False,1946
+20001206X02671,1,"['fire', 'human_factors']",fire,2,4,False,False,True,True,False,False,3474
+20001207X03053,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,2734
+20001206X02673,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,2072
+20001207X02806,1,[],,0,3,False,False,False,False,False,False,1373
+20001207X02811,1,['engine_failure'],engine_failure,1,3,True,False,False,False,False,False,2095
+20001207X04122,1,['fuel_related'],fuel_related,1,3,False,False,False,False,False,False,4676
+20001207X02920,1,[],,0,3,False,False,False,False,False,False,1810
+20001207X03051,1,['weather'],weather,1,4,False,True,False,False,False,False,5505
+20001207X03056,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,3135
+20001207X03057,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1578
+20001207X03394,1,"['landing_gear', 'human_factors']",landing_gear,2,3,False,False,True,False,False,False,2663
+20001207X03598,1,"['landing_gear', 'weather']",landing_gear,2,1,False,True,False,False,False,False,1870
+20001207X03399,1,"['landing_gear', 'human_factors']",landing_gear,2,3,False,False,True,False,False,False,5163
+20001207X03400,1,['weather'],weather,1,3,False,True,False,False,False,False,1391
+20001207X03403,1,[],,0,3,False,False,False,False,False,False,1297
+20001207X03590,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,2080
+20001207X03592,1,[],,0,3,False,False,False,False,False,False,1341
+20001207X03839,1,['fuel_related'],fuel_related,1,3,False,False,False,False,False,False,2387
+20001207X03851,1,"['landing_gear', 'human_factors']",landing_gear,2,3,False,False,True,False,False,False,1446
+20001207X04135,1,['fire'],fire,1,3,False,False,False,True,False,False,2517
+20001207X04404,1,[],,0,3,False,False,False,False,False,False,1167
+20001207X04412,1,[],,0,3,False,False,False,False,False,False,1726
+20001208X05677,1,"['landing_gear', 'weather']",landing_gear,2,4,False,True,False,False,False,False,19960
+20001208X05678,1,['human_factors'],human_factors,1,4,False,False,True,False,False,False,4270
+20001213X34360,1,[],,0,1,False,False,False,False,False,False,0
+20001208X06131,1,"['fuel_related', 'weather', 'fire']",fuel_related,3,5,False,True,False,True,False,False,10905
+20001208X06132,1,"['landing_gear', 'fuel_related', 'fire', 'human_factors']",landing_gear,4,5,False,False,True,True,False,False,21699
+20001208X06644,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,11125
+20001207X04796,1,"['landing_gear', 'weather', 'human_factors']",landing_gear,3,3,False,True,True,False,False,False,2005
+20001208X06649,1,['engine_failure'],engine_failure,1,5,True,False,False,False,False,False,12801
+20001208X06390,1,[],,0,5,False,False,False,False,False,False,3950
+20001208X05336,1,[],,0,2,False,False,False,False,False,False,1794
+20001208X05206,2,[],,0,1,False,False,False,False,False,False,214
+20001207X04797,1,[],,0,3,False,False,False,False,False,False,1482
+20001207X04935,1,[],,0,3,False,False,False,False,False,False,3397
+20001207X04937,1,['fire'],fire,1,3,False,False,False,True,False,False,5920
+20001214X40951,1,[],,0,1,False,False,False,False,False,False,0
+20001207X04938,1,"['landing_gear', 'human_factors']",landing_gear,2,3,False,False,True,False,False,False,1975
+20001208X05206,1,[],,0,3,False,False,False,False,False,False,3333
+20001208X05337,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,3784
+20001208X05340,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1171
+20001208X05343,1,[],,0,3,False,False,False,False,False,False,1348
+20001208X05497,1,['weather'],weather,1,4,False,True,False,False,False,False,5246
+20001208X05499,1,['weather'],weather,1,4,False,True,False,False,False,False,2488
+20001213X34363,1,[],,0,1,False,False,False,False,False,False,0
+20001208X05683,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,6418
+20001208X06142,1,"['landing_gear', 'fuel_related', 'human_factors']",landing_gear,3,4,False,False,True,False,False,False,2830
+20001208X05691,1,['bird_strike'],bird_strike,1,3,False,False,False,False,False,False,1498
+20001208X05889,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,1801
+20001208X05891,1,"['landing_gear', 'fire']",landing_gear,2,3,False,False,False,True,False,False,1519
+20001214X35814,1,[],,0,1,False,False,False,False,False,False,0
+20001208X06145,1,[],,0,3,False,False,False,False,False,False,4231
+20001208X06135,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,3539
+20001208X06391,1,['landing_gear'],landing_gear,1,2,False,False,False,False,False,False,3416
+20001208X06391,2,[],,0,1,False,False,False,False,False,False,240
+20001208X06394,1,[],,0,3,False,False,False,False,False,False,1057
+20001208X06395,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1503
+20001208X06397,1,[],,0,3,False,False,False,False,False,False,1322
+20001208X06651,1,[],,0,3,False,False,False,False,False,False,1527
+20001214X37322,1,[],,0,1,False,False,False,False,False,False,0
+20001208X06409,1,"['engine_failure', 'fuel_related', 'human_factors']",engine_failure,3,3,True,False,True,False,False,False,2662
+20001208X06653,1,"['engine_failure', 'landing_gear', 'human_factors']",engine_failure,3,3,True,False,True,False,False,False,4848
+20001208X06654,1,[],,0,5,False,False,False,False,False,False,1240
+20001214X40160,1,[],,0,1,False,False,False,False,False,False,0
+20001208X06664,1,['weather'],weather,1,4,False,True,False,False,False,False,4264
+20001208X06825,1,"['weather', 'fire']",weather,2,5,False,True,False,True,False,False,10381
+20001208X06989,1,"['landing_gear', 'fuel_related', 'structural']",landing_gear,3,5,False,False,False,False,True,False,23854
+20001208X06990,1,['landing_gear'],landing_gear,1,5,False,False,False,False,False,False,3853
+20001208X07249,1,"['landing_gear', 'weather', 'human_factors']",landing_gear,3,5,False,True,True,False,False,False,29169
+20001208X07469,1,"['landing_gear', 'weather', 'human_factors']",landing_gear,3,2,False,True,True,False,False,False,3890
+20001208X08037,1,"['landing_gear', 'weather']",landing_gear,2,5,False,True,False,False,False,False,28809
+20001208X08272,1,"['engine_failure', 'landing_gear']",engine_failure,2,5,True,False,False,False,False,False,31994
+20001208X08273,1,"['engine_failure', 'fuel_related', 'structural', 'human_factors']",engine_failure,4,5,True,False,True,False,True,False,31179
+20001208X08759,1,['fuel_related'],fuel_related,1,5,False,False,False,False,False,False,8574
+20001208X07122,1,['landing_gear'],landing_gear,1,2,False,False,False,False,False,False,8134
+20001208X07123,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,2612
+20001208X07124,1,[],,0,3,False,False,False,False,False,False,1369
+20001208X07125,1,[],,0,5,False,False,False,False,False,False,2852
+20001208X07126,1,['weather'],weather,1,3,False,True,False,False,False,False,7310
+20001208X07255,1,['weather'],weather,1,3,False,True,False,False,False,False,1583
+20001208X07369,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,2691
+20001208X07372,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,2838
+20001208X07478,1,"['engine_failure', 'human_factors']",engine_failure,2,3,True,False,True,False,False,False,3861
+20001208X07481,1,[],,0,3,False,False,False,False,False,False,1046
+20001208X07639,1,['weather'],weather,1,3,False,True,False,False,False,False,2647
+20001208X07640,1,['weather'],weather,1,3,False,True,False,False,False,False,2640
+20001208X07645,1,"['fire', 'maintenance']",fire,2,3,False,False,False,True,False,True,2516
+20001208X07835,1,"['engine_failure', 'fuel_related']",engine_failure,2,3,True,False,False,False,False,False,4344
+20001208X07655,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1550
+20001208X07656,1,['human_factors'],human_factors,1,3,False,False,True,False,False,False,1527
+20001208X08274,1,['weather'],weather,1,3,False,True,False,False,False,False,3481
+20001208X08045,1,[],,0,3,False,False,False,False,False,False,1425
+20001214X44712,1,[],,0,1,False,False,False,False,False,False,0
+20001208X08278,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1395
+20001208X08282,1,['weather'],weather,1,3,False,True,False,False,False,False,1274
+20001208X08283,1,[],,0,3,False,False,False,False,False,False,1214
+20001208X08531,1,"['landing_gear', 'human_factors']",landing_gear,2,3,False,False,True,False,False,False,2482
+20001214X40177,1,[],,0,1,False,False,False,False,False,False,0
+20001208X08535,1,[],,0,3,False,False,False,False,False,False,1490
+20001208X08536,1,[],,0,3,False,False,False,False,False,False,2017
+20001208X08537,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1843
+20001208X08538,1,"['engine_failure', 'landing_gear', 'fuel_related']",engine_failure,3,3,True,False,False,False,False,False,2944
+20001208X08761,1,['weather'],weather,1,3,False,True,False,False,False,False,2217
+20001208X08763,1,"['landing_gear', 'human_factors']",landing_gear,2,2,False,False,True,False,False,False,2409
+20001208X08765,1,[],,0,3,False,False,False,False,False,False,1275
+20001208X08769,1,[],,0,3,False,False,False,False,False,False,1704
+20001208X08769,2,[],,0,1,False,False,False,False,False,False,176
+20001208X08772,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1926
+20001208X07657,1,"['landing_gear', 'fuel_related', 'weather', 'structural', 'electrical', 'human_factors']",landing_gear,6,5,False,True,True,False,True,False,42350
+20001213X34367,1,[],,0,1,False,False,False,False,False,False,0
+20001208X08288,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1335
+20001208X08941,1,"['landing_gear', 'fuel_related', 'structural', 'fire']",landing_gear,4,5,False,False,False,True,True,False,12029
+20001211X09501,1,['human_factors'],human_factors,1,5,False,False,True,False,False,False,13663
+20001211X09964,1,"['landing_gear', 'weather']",landing_gear,2,3,False,True,False,False,False,False,17562
+20001211X09966,1,[],,0,5,False,False,False,False,False,False,31071
+20001211X10200,1,"['landing_gear', 'fuel_related', 'electrical', 'fire']",landing_gear,4,3,False,False,False,True,False,False,18811
+20001208X08942,1,"['weather', 'human_factors']",weather,2,1,False,True,True,False,False,False,3228
+20001208X09251,1,"['engine_failure', 'landing_gear', 'fuel_related']",engine_failure,3,3,True,False,False,False,False,False,2621
+20001208X08948,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,1426
+20001208X09126,1,[],,0,3,False,False,False,False,False,False,1725
+20001211X09790,1,[],,0,3,False,False,False,False,False,False,1508
+20001211X09391,1,['weather'],weather,1,4,False,True,False,False,False,False,5786
+20001211X09503,1,"['engine_failure', 'landing_gear', 'fuel_related']",engine_failure,3,3,True,False,False,False,False,False,2542
+20001211X09506,1,[],,0,3,False,False,False,False,False,False,2873
+20001211X09507,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,2146
+20001211X09793,1,['weather'],weather,1,3,False,True,False,False,False,False,1318
+20001211X09795,1,['weather'],weather,1,3,False,True,False,False,False,False,2753
+20001211X09969,1,[],,0,3,False,False,False,False,False,False,2229
+20001211X09976,1,[],,0,3,False,False,False,False,False,False,3488
+20001211X09979,1,[],,0,3,False,False,False,False,False,False,2540
+20001211X10206,1,['engine_failure'],engine_failure,1,3,True,False,False,False,False,False,1830
+20001211X10212,1,"['landing_gear', 'human_factors']",landing_gear,2,3,False,False,True,False,False,False,1956
+20001211X10216,1,['landing_gear'],landing_gear,1,3,False,False,False,False,False,False,3999
+20001211X10221,1,[],,0,3,False,False,False,False,False,False,2316
+20001208X09127,1,"['landing_gear', 'fuel_related', 'weather', 'structural']",landing_gear,4,5,False,True,False,False,True,False,36830
+20001211X11907,1,"['landing_gear', 'fuel_related']",landing_gear,2,5,False,False,False,False,False,False,7944
+20001211X13055,1,"['weather', 'human_factors']",weather,2,5,False,True,True,False,False,False,15557
+20001211X12060,1,['weather'],weather,1,2,False,True,False,False,False,False,6424
+20001211X12525,1,"['engine_failure', 'fuel_related', 'fire']",engine_failure,3,2,True,False,False,True,False,False,4357
+20001211X12763,1,['weather'],weather,1,2,False,True,False,False,False,False,3815
+20001214X40550,1,[],,0,1,False,False,False,False,False,False,0
+20001211X13312,1,['weather'],weather,1,1,False,True,False,False,False,False,1978
+20001206X01021,1,['weather'],weather,1,5,False,True,False,False,False,False,7330
+20001214X38498,1,[],,0,1,False,False,False,False,False,False,0
+20001211X13516,1,['weather'],weather,1,2,False,True,False,False,False,False,3501
+20001206X00695,1,['weather'],weather,1,2,False,True,False,False,False,False,1444
+20001206X01204,1,"['landing_gear', 'hydraulic']",landing_gear,2,2,False,False,False,False,False,False,14906
+20001206X01205,1,"['engine_failure', 'weather']",engine_failure,2,1,True,True,False,False,False,False,22272
+20001206X01206,1,"['engine_failure', 'fire', 'human_factors']",engine_failure,3,2,True,False,True,True,False,False,4006
+20001206X00587,1,[],,0,3,False,False,False,False,False,False,3835
+20001206X01026,1,[],,0,1,False,False,False,False,False,False,109
+20001214X39443,1,[],,0,1,False,False,False,False,False,False,0
+20001214X39776,1,[],,0,1,False,False,False,False,False,False,0
+20001214X39777,1,[],,0,1,False,False,False,False,False,False,0
+20001214X38502,1,[],,0,1,False,False,False,False,False,False,0
+20001214X38930,1,[],,0,1,False,False,False,False,False,False,0
+20001214X42320,1,[],,0,1,False,False,False,False,False,False,0
+20001207X02815,1,"['landing_gear', 'weather', 'hydraulic']",landing_gear,3,2,False,True,False,False,False,False,9090
+20001207X02821,1,['landing_gear'],landing_gear,1,1,False,False,False,False,False,False,2171
+20001206X02684,1,['weather'],weather,1,2,False,True,False,False,False,False,2620
+20001207X03067,1,['weather'],weather,1,3,False,True,False,False,False,False,2907
+20001207X03072,1,['weather'],weather,1,2,False,True,False,False,False,False,2226
+20001207X04150,1,"['weather', 'bird_strike']",weather,2,3,False,True,False,False,False,False,1933
+20001207X03623,1,[],,0,1,False,False,False,False,False,False,699
+20001208X05207,1,"['landing_gear', 'human_factors']",landing_gear,2,3,False,False,True,False,False,False,6493
+20001208X06148,1,"['engine_failure', 'landing_gear', 'weather', 'bird_strike', 'fire', 'human_factors']",engine_failure,6,3,True,True,True,True,False,False,30804
+20001208X05695,1,[],,0,5,False,False,False,False,False,False,2254
+20001208X05210,1,['hydraulic'],hydraulic,1,1,False,False,False,False,False,False,4416
+20001208X05211,1,"['weather', 'human_factors']",weather,2,1,False,True,True,False,False,False,5597
+20001207X04951,1,"['weather', 'human_factors']",weather,2,3,False,True,True,False,False,False,2041
+20001207X04953,1,['weather'],weather,1,3,False,True,False,False,False,False,1375
+20001214X43571,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37931,1,[],,0,1,False,False,False,False,False,False,0
+20001208X05511,1,"['landing_gear', 'weather']",landing_gear,2,1,False,True,False,False,False,False,2028
+20001214X44392,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37932,1,[],,0,1,False,False,False,False,False,False,0
+20001208X08545,1,"['landing_gear', 'weather']",landing_gear,2,4,False,True,False,False,False,False,20684
+20001214X44394,1,[],,0,1,False,False,False,False,False,False,0
+20001208X07257,1,['human_factors'],human_factors,1,2,False,False,True,False,False,False,4106
+20001208X07375,1,['weather'],weather,1,2,False,True,False,False,False,False,2758
+20001208X07667,1,['weather'],weather,1,3,False,True,False,False,False,False,3511
+20001208X07854,1,['weather'],weather,1,1,False,True,False,False,False,False,1387
+20001214X40946,1,[],,0,1,False,False,False,False,False,False,0
+20001211X09984,1,"['landing_gear', 'weather', 'hydraulic']",landing_gear,3,5,False,True,False,False,False,False,10380
+20001208X09257,1,['weather'],weather,1,2,False,True,False,False,False,False,2597
+20001214X43551,1,[],,0,1,False,False,False,False,False,False,0
+20001211X09993,1,['hydraulic'],hydraulic,1,3,False,False,False,False,False,False,2855
+20001214X43552,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41904,1,[],,0,1,False,False,False,False,False,False,0
+20001214X43170,1,[],,0,1,False,False,False,False,False,False,0
+20001214X43555,1,[],,0,1,False,False,False,False,False,False,0
+20001214X43559,1,[],,0,1,False,False,False,False,False,False,0
+20001214X43962,1,[],,0,1,False,False,False,False,False,False,0
+20001214X43966,1,[],,0,1,False,False,False,False,False,False,0
+20001213X34667,1,[],,0,1,False,False,False,False,False,False,0
+20001214X44384,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41911,1,[],,0,1,False,False,False,False,False,False,0
+20001214X42106,1,[],,0,1,False,False,False,False,False,False,0
+20001214X42107,1,[],,0,1,False,False,False,False,False,False,0
+20001214X42314,1,[],,0,1,False,False,False,False,False,False,0
+20001214X42317,1,[],,0,1,False,False,False,False,False,False,0
+20001214X42580,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41912,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41913,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41917,1,[],,0,1,False,False,False,False,False,False,0
+20001214X42846,1,[],,0,1,False,False,False,False,False,False,0
+20001214X43176,1,[],,0,1,False,False,False,False,False,False,0
+20001214X43976,1,[],,0,1,False,False,False,False,False,False,0
+20001214X43977,1,[],,0,1,False,False,False,False,False,False,0
+20001214X43979,1,[],,0,1,False,False,False,False,False,False,0
+20001214X44386,1,[],,0,1,False,False,False,False,False,False,0
+20001214X44710,1,[],,0,1,False,False,False,False,False,False,0
+20001214X38927,1,[],,0,1,False,False,False,False,False,False,0
+20001214X39773,1,[],,0,1,False,False,False,False,False,False,0
+20001214X39775,1,[],,0,1,False,False,False,False,False,False,0
+20001214X40159,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36333,1,[],,0,1,False,False,False,False,False,False,0
+20001214X40924,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41918,1,[],,0,1,False,False,False,False,False,False,0
+20001214X44715,1,[],,0,1,False,False,False,False,False,False,0
+20001214X45215,1,[],,0,1,False,False,False,False,False,False,0
+20001214X45216,1,[],,0,1,False,False,False,False,False,False,0
+20001214X39450,1,[],,0,1,False,False,False,False,False,False,0
+20001214X39451,1,[],,0,1,False,False,False,False,False,False,0
+20001214X39783,1,[],,0,1,False,False,False,False,False,False,0
+20001214X39797,1,[],,0,1,False,False,False,False,False,False,0
+20001214X40169,1,[],,0,1,False,False,False,False,False,False,0
+20001214X38690,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35445,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35447,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35805,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36627,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35449,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37320,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37658,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36335,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37659,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41249,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41251,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41492,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41493,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41693,1,[],,0,1,False,False,False,False,False,False,0
+20001214X41694,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35450,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35452,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35453,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35456,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35457,1,[],,0,1,False,False,False,False,False,False,0
+20001214X35458,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36062,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36064,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36070,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36071,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36336,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36337,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36339,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36341,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36641,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36344,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36344,2,[],,0,1,False,False,False,False,False,False,0
+20001214X36649,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36950,1,[],,0,1,False,False,False,False,False,False,0
+20001214X36959,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37339,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37667,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37668,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37678,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37345,1,[],,0,1,False,False,False,False,False,False,0
+20001214X37681,1,[],,0,1,False,False,False,False,False,False,0
+20001214X38167,1,[],,0,1,False,False,False,False,False,False,0
+20001214X38168,1,[],,0,1,False,False,False,False,False,False,0
+20001214X38326,1,[],,0,1,False,False,False,False,False,False,0
+20001213X33717,1,[],,0,1,False,False,False,False,False,False,0
+20001213X33724,1,[],,0,1,False,False,False,False,False,False,0
+20001213X34354,1,[],,0,1,False,False,False,False,False,False,0
+20001214X38328,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32958,1,[],,0,1,False,False,False,False,False,False,0
+20001213X33722,1,[],,0,1,False,False,False,False,False,False,0
+20001213X33723,1,[],,0,1,False,False,False,False,False,False,0
+20001214X38334,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32792,1,[],,0,1,False,False,False,False,False,False,0
+20001213X33437,1,[],,0,1,False,False,False,False,False,False,0
+20001213X33438,1,[],,0,1,False,False,False,False,False,False,0
+20001213X33738,1,[],,0,1,False,False,False,False,False,False,0
+20001213X34051,1,[],,0,1,False,False,False,False,False,False,0
+20001213X34680,1,[],,0,1,False,False,False,False,False,False,0
+20001213X34681,1,[],,0,1,False,False,False,False,False,False,0
+20001213X34686,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32798,1,[],,0,1,False,False,False,False,False,False,0
+20001213X35287,1,[],,0,1,False,False,False,False,False,False,0
+20001213X30016,1,[],,0,1,False,False,False,False,False,False,0
+20001213X30836,1,[],,0,1,False,False,False,False,False,False,0
+20001213X31679,1,[],,0,1,False,False,False,False,False,False,0
+20001213X30168,1,[],,0,1,False,False,False,False,False,False,0
+20001213X34892,1,[],,0,1,False,False,False,False,False,False,0
+20001213X35081,2,[],,0,1,False,False,False,False,False,False,0
+20001213X34897,1,[],,0,1,False,False,False,False,False,False,0
+20001213X35084,1,[],,0,1,False,False,False,False,False,False,0
+20001213X35289,1,[],,0,1,False,False,False,False,False,False,0
+20001213X30174,1,[],,0,1,False,False,False,False,False,False,0
+20001213X31069,1,[],,0,1,False,False,False,False,False,False,0
+20001213X31977,1,[],,0,1,False,False,False,False,False,False,0
+20001213X31981,1,[],,0,1,False,False,False,False,False,False,0
+20001213X30565,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32644,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32645,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32646,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32647,1,[],,0,1,False,False,False,False,False,False,0
+20001213X25585,1,[],,0,1,False,False,False,False,False,False,0
+20001213X25587,2,[],,0,1,False,False,False,False,False,False,0
+20001213X26091,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26405,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32225,1,[],,0,1,False,False,False,False,False,False,0
+20001213X25365,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32230,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32234,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32235,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32236,1,[],,0,1,False,False,False,False,False,False,0
+20001213X32456,1,[],,0,1,False,False,False,False,False,False,0
+20001213X24830,1,[],,0,1,False,False,False,False,False,False,0
+20001213X24834,1,[],,0,1,False,False,False,False,False,False,0
+20001213X24991,1,[],,0,1,False,False,False,False,False,False,0
+20001213X24993,1,[],,0,1,False,False,False,False,False,False,0
+20001213X25182,1,[],,0,1,False,False,False,False,False,False,0
+20001213X25369,1,[],,0,1,False,False,False,False,False,False,0
+20001213X25589,1,[],,0,1,False,False,False,False,False,False,0
+20001213X25593,1,[],,0,1,False,False,False,False,False,False,0
+20001213X25836,1,[],,0,1,False,False,False,False,False,False,0
+20001213X25847,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26095,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26102,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26103,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26409,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26412,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26413,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26421,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26741,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26749,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26750,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26751,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26753,1,[],,0,1,False,False,False,False,False,False,0
+20001213X27676,1,[],,0,1,False,False,False,False,False,False,71
+20001213X27678,1,[],,0,1,False,False,False,False,False,False,136
+20001213X27810,1,['weather'],weather,1,1,False,True,False,False,False,False,194
+20001213X27811,1,[],,0,1,False,False,False,False,False,False,238
+20001213X28212,1,[],,0,1,False,False,False,False,False,False,168
+20001213X28213,1,['landing_gear'],landing_gear,1,1,False,False,False,False,False,False,267
+20001213X28450,1,['weather'],weather,1,1,False,True,False,False,False,False,218
+20001213X28692,1,"['fuel_related', 'weather']",fuel_related,2,1,False,True,False,False,False,False,273
+20001213X28994,1,['weather'],weather,1,1,False,True,False,False,False,False,207
+20001213X27179,1,[],,0,1,False,False,False,False,False,False,0
+20001213X27515,1,[],,0,1,False,False,False,False,False,False,97
+20001213X28013,1,['human_factors'],human_factors,1,1,False,False,True,False,False,False,130
+20001213X28216,1,[],,0,1,False,False,False,False,False,False,102
+20001213X28217,1,['landing_gear'],landing_gear,1,1,False,False,False,False,False,False,223
+20001213X26954,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26957,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26958,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26963,1,[],,0,1,False,False,False,False,False,False,0
+20001213X27182,1,[],,0,1,False,False,False,False,False,False,0
+20001213X26965,1,[],,0,1,False,False,False,False,False,False,0
+20001213X27362,1,[],,0,1,False,False,False,False,False,False,0
+20001213X27365,1,[],,0,1,False,False,False,False,False,False,0
+20001213X27366,1,[],,0,1,False,False,False,False,False,False,0
+20001213X27368,1,[],,0,1,False,False,False,False,False,False,0
+20001213X27517,1,['engine_failure'],engine_failure,1,1,True,False,False,False,False,False,305
+20001213X27518,1,[],,0,1,False,False,False,False,False,False,151
+20001213X27521,1,[],,0,1,False,False,False,False,False,False,268
+20001213X27522,1,[],,0,1,False,False,False,False,False,False,189
+20001213X27813,1,[],,0,1,False,False,False,False,False,False,86
+20001213X28222,1,[],,0,1,False,False,False,False,False,False,189
+20001213X28226,1,[],,0,1,False,False,False,False,False,False,258
+20001213X28228,1,[],,0,1,False,False,False,False,False,False,63
+20001213X28459,1,['landing_gear'],landing_gear,1,1,False,False,False,False,False,False,62
+20001213X28465,1,[],,0,1,False,False,False,False,False,False,149
+20001213X28695,1,[],,0,1,False,False,False,False,False,False,185
+20001213X28701,1,[],,0,1,False,False,False,False,False,False,115
+20001213X28702,1,[],,0,1,False,False,False,False,False,False,101
+20001213X29001,1,[],,0,1,False,False,False,False,False,False,206
+20001213X29013,1,[],,0,1,False,False,False,False,False,False,165
+20001213X29269,1,[],,0,1,False,False,False,False,False,False,63
+20001213X29283,1,['weather'],weather,1,1,False,True,False,False,False,False,127
+20001213X29894,1,['weather'],weather,1,1,False,True,False,False,False,False,112
+20001212X22355,1,['human_factors'],human_factors,1,1,False,False,True,False,False,False,163
+20001212X22501,1,['weather'],weather,1,1,False,True,False,False,False,False,235
+20001212X22640,1,"['weather', 'human_factors']",weather,2,1,False,True,True,False,False,False,163
+20001212X22644,1,[],,0,1,False,False,False,False,False,False,113
+20001212X23293,1,"['engine_failure', 'fuel_related']",engine_failure,2,1,True,False,False,False,False,False,299
+20001212X23296,1,['weather'],weather,1,1,False,True,False,False,False,False,205
+20001212X23568,1,"['engine_failure', 'human_factors']",engine_failure,2,1,True,False,True,False,False,False,189
+20001212X24146,1,[],,0,1,False,False,False,False,False,False,225
+20001213X29510,1,[],,0,1,False,False,False,False,False,False,214
+20001213X29726,1,['human_factors'],human_factors,1,1,False,False,True,False,False,False,119
+20001213X29728,1,['human_factors'],human_factors,1,1,False,False,True,False,False,False,210
+20001213X29896,1,[],,0,1,False,False,False,False,False,False,113
+20001213X29897,1,[],,0,1,False,False,False,False,False,False,187
+20001212X22358,1,['weather'],weather,1,1,False,True,False,False,False,False,251
+20001212X22503,1,[],,0,1,False,False,False,False,False,False,282
+20001212X17752,1,[],,0,1,False,False,False,False,False,False,92
+20001212X22833,1,[],,0,1,False,False,False,False,False,False,71
+20001212X22838,1,[],,0,1,False,False,False,False,False,False,63
+20001212X22839,1,['maintenance'],maintenance,1,1,False,False,False,False,False,True,98
+20001212X23042,1,[],,0,1,False,False,False,False,False,False,85
+20001212X23051,1,[],,0,1,False,False,False,False,False,False,128
+20001212X23303,1,[],,0,1,False,False,False,False,False,False,152
+20001212X23303,2,[],,0,1,False,False,False,False,False,False,152
+20001212X23309,1,[],,0,1,False,False,False,False,False,False,107
+20001212X23310,1,[],,0,1,False,False,False,False,False,False,56
+20001212X23314,1,[],,0,1,False,False,False,False,False,False,44
+20001212X23571,1,['engine_failure'],engine_failure,1,4,True,False,False,False,False,False,78
+20001212X23579,1,[],,0,1,False,False,False,False,False,False,74
+20001212X23584,1,['engine_failure'],engine_failure,1,1,True,False,False,False,False,False,46
+20001212X23854,1,[],,0,1,False,False,False,False,False,False,56
+20001212X23856,1,[],,0,1,False,False,False,False,False,False,76
+20001212X23858,1,['landing_gear'],landing_gear,1,1,False,False,False,False,False,False,59
+20001212X23860,1,[],,0,1,False,False,False,False,False,False,89
+20001212X23867,1,[],,0,1,False,False,False,False,False,False,119
+20001212X23879,1,['human_factors'],human_factors,1,1,False,False,True,False,False,False,141
+20001212X24155,1,[],,0,1,False,False,False,False,False,False,90
+20001212X24166,1,[],,0,1,False,False,False,False,False,False,133
+20001212X24169,1,[],,0,1,False,False,False,False,False,False,102
+20001212X24170,1,[],,0,1,False,False,False,False,False,False,134

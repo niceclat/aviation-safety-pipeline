@@ -19,6 +19,7 @@ BASE_URL = "https://data.ntsb.gov/avdata/FileDirectory/DownloadFile?fileID=C%3A%
 DATA_FILES = [
     ("avall.zip", "avall.mdb"),
     ("Pre2008.zip", "Pre2008.mdb"),
+    ("PRE1982.zip", "PRE1982.MDB"),
 ]
 
 # Schema documentation (downloaded in parallel, non-blocking)
@@ -102,7 +103,7 @@ def download_ntsb_data(data_dir: Path) -> dict:
     logger.info("Downloading NTSB aviation data (parallel)...")
 
     # Download MDB zips in parallel
-    with ThreadPoolExecutor(max_workers=2) as pool:
+    with ThreadPoolExecutor(max_workers=3) as pool:
         futures = {
             pool.submit(_download_and_extract, data_dir, zn, mn): mn
             for zn, mn in DATA_FILES

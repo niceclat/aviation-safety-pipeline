@@ -1,11 +1,15 @@
 """
-Bronze layer ingestion: MDB files → PostgreSQL bronze schema.
+Bronze layer ingestion: download, extract, and load NTSB MDB files.
 
-Reads MDB files using mdbtools (Linux/Docker) or pyodbc (Windows),
-then bulk-loads into bronze tables via PostgreSQL COPY.
+Pipeline: download zip → extract MDB → auto-discover schema → bulk COPY to PostgreSQL.
 
-All SQL lives in sql/bronze/ — this module only handles data extraction
-and loading mechanics.
+Each data source gets its own isolated bronze schema:
+    avall.mdb     → bronze_avall.*      (2008-present,  20 tables)
+    Pre2008.mdb   → bronze_pre2008.*    (1982-2007,     20 tables)
+    PRE1982.MDB   → bronze_pre1982.*    (1962-1981,      5 tables)
+
+No transformation — raw mirror with lineage metadata (_source_file, _ingested_at).
+See docs/DATA_CONTRACT.md for the full source-to-bronze mapping.
 """
 
 import csv
@@ -13,318 +17,382 @@ import io
 import logging
 import platform
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
-
-import psycopg2
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Table-to-MDB-table mapping for Pre2008/avall (same schema)
-MODERN_TABLES = {
-    "bronze.events":          "events",
-    "bronze.aircraft":        "aircraft",
-    "bronze.narratives":      "narratives",
-    "bronze.findings":        "Findings",
-    "bronze.events_sequence": "Events_Sequence",
-    "bronze.occurrences":     "Occurrences",
-    "bronze.seq_of_events":   "seq_of_events",
-    "bronze.engines":         "engines",
-    "bronze.injury":          "injury",
-    "bronze.flight_crew":     "Flight_Crew",
-    "bronze.flight_time":     "flight_time",
-    "bronze.ct_seqevt":       "ct_seqevt",
-    "bronze.ct_iaids":        "ct_iaids",
-    "bronze.states":          "states",
-}
 
-# Column mappings: bronze table → list of MDB columns to extract
-# (ordered to match the bronze table DDL, excluding lineage columns)
-COLUMN_MAP = {
-    "bronze.events": [
-        "ev_id", "ntsb_no", "ev_type", "ev_date", "ev_dow", "ev_time",
-        "ev_tmzn", "ev_city", "ev_state", "ev_country", "ev_site_zipcode",
-        "ev_year", "ev_month", "mid_air", "on_ground_collision", "latitude",
-        "longitude", "latlong_acq", "apt_name", "ev_nr_apt_id", "ev_nr_apt_loc",
-        "apt_dist", "apt_dir", "apt_elev", "wx_brief_comp", "wx_src_iic",
-        "wx_obs_time", "wx_obs_dir", "wx_obs_fac_id", "wx_obs_elev",
-        "wx_obs_dist", "wx_obs_tmzn", "light_cond", "sky_cond_nonceil",
-        "sky_nonceil_ht", "sky_ceil_ht", "sky_cond_ceil", "vis_rvr", "vis_rvv",
-        "vis_sm", "wx_temp", "wx_dew_pt", "wind_dir_deg", "wind_dir_ind",
-        "wind_vel_kts", "wind_vel_ind", "gust_ind", "gust_kts", "altimeter",
-        "wx_dens_alt", "wx_int_precip", "metar", "ev_highest_injury",
-        "inj_f_grnd", "inj_m_grnd", "inj_s_grnd", "inj_tot_f", "inj_tot_m",
-        "inj_tot_n", "inj_tot_s", "inj_tot_t", "invest_agy", "ntsb_docket",
-        "ntsb_notf_from", "ntsb_notf_date", "ntsb_notf_tm", "fiche_number",
-        "lchg_date", "lchg_userid", "wx_cond_basic", "faa_dist_office",
-        "dec_latitude", "dec_longitude",
-    ],
-    "bronze.aircraft": [
-        "ev_id", "Aircraft_Key", "regis_no", "ntsb_no", "acft_missing",
-        "far_part", "flt_plan_filed", "flight_plan_activated", "damage",
-        "acft_fire", "acft_expl", "acft_make", "acft_model", "acft_series",
-        "acft_serial_no", "cert_max_gr_wt", "acft_category", "acft_reg_cls",
-        "homebuilt", "fc_seats", "cc_seats", "pax_seats", "total_seats",
-        "num_eng", "fixed_retractable", "type_last_insp", "date_last_insp",
-        "afm_hrs_last_insp", "afm_hrs", "elt_install", "elt_oper",
-        "elt_aided_loc_ev", "elt_type", "owner_acft", "owner_city",
-        "owner_state", "owner_country", "oper_name", "oper_code",
-        "certs_held", "oper_cert", "oper_cert_num", "oper_sched",
-        "oper_dom_int", "oper_pax_cargo", "type_fly", "second_pilot",
-        "dprt_apt_id", "dprt_city", "dprt_state", "dprt_country",
-        "dprt_time", "dprt_timezn", "dest_apt_id", "dest_city", "dest_state",
-        "dest_country", "phase_flt_spec", "evacuation", "acft_year", "num_eng",
-    ],
-    "bronze.narratives": [
-        "ev_id", "Aircraft_Key", "narr_accp", "narr_accf", "narr_cause",
-        "narr_inc", "lchg_date", "lchg_userid",
-    ],
-    "bronze.findings": [
-        "ev_id", "Aircraft_Key", "finding_no", "finding_code",
-        "finding_description", "category_no", "subcategory_no", "section_no",
-        "subsection_no", "modifier_no", "Cause_Factor", "cm_inPc",
-        "lchg_date", "lchg_userid",
-    ],
-    "bronze.events_sequence": [
-        "ev_id", "Aircraft_Key", "Occurrence_No", "Occurrence_Code",
-        "Occurrence_Description", "phase_no", "eventsoe_no", "Defining_ev",
-        "lchg_date", "lchg_userid",
-    ],
-    "bronze.occurrences": [
-        "ev_id", "Aircraft_Key", "Occurrence_No", "Occurrence_Code",
-        "Phase_of_Flight", "Altitude", "lchg_date", "lchg_userid",
-    ],
-    "bronze.seq_of_events": [
-        "ev_id", "Aircraft_Key", "Occurrence_No", "seq_event_no",
-        "group_code", "Subj_Code", "Cause_Factor", "Modifier_Code",
-        "Person_Code", "lchg_date", "lchg_userid",
-    ],
-    "bronze.engines": [
-        "ev_id", "Aircraft_Key", "eng_no", "eng_type", "eng_mfgr",
-        "eng_model", "power_units", "hp_or_lbs", "carb_fuel_injection",
-        "propeller_type", "propeller_make", "propeller_model",
-        "eng_time_total", "eng_time_last_insp", "eng_time_overhaul",
-        "lchg_date", "lchg_userid",
-    ],
-    "bronze.injury": [
-        "ev_id", "Aircraft_Key", "inj_person_category", "injury_level",
-        "inj_person_count", "lchg_date", "lchg_userid",
-    ],
-    "bronze.flight_crew": [
-        "ev_id", "Aircraft_Key", "crew_no", "crew_category", "crew_age",
-        "crew_sex", "med_certf", "med_crtf_vldty", "date_lst_med",
-        "crew_rat_endorse", "crew_inj_level", "seatbelts_used",
-        "shldr_harn_used", "crew_tox_perf", "seat_occ_pic", "pc_profession",
-        "bfr", "bfr_date", "lchg_date", "lchg_userid",
-    ],
-    "bronze.flight_time": [
-        "ev_id", "Aircraft_Key", "crew_no", "flight_type", "flight_craft",
-        "flight_hours", "lchg_date", "lchg_userid",
-    ],
-    "bronze.ct_seqevt": ["code", "meaning"],
-    "bronze.ct_iaids": ["ct_name", "code_iaids", "meaning"],
-    "bronze.states": ["state", "name", "faa_region"],
+# ---------------------------------------------------------------------------
+# Configuration: source definitions
+# ---------------------------------------------------------------------------
+
+@dataclass
+class BronzeSource:
+    """Definition of a single MDB data source for bronze ingestion."""
+    mdb_filename: str       # e.g. "avall.mdb"
+    schema: str             # e.g. "bronze_avall"
+    ddl_file: str           # e.g. "002_bronze_avall.sql"
+    table_renames: dict     # MDB table name → PG table name overrides
+
+
+SOURCES = [
+    BronzeSource(
+        mdb_filename="avall.mdb",
+        schema="bronze_avall",
+        ddl_file="002_bronze_avall.sql",
+        table_renames={
+            "Flight_Crew": "flight_crew",
+            "Events_Sequence": "events_sequence",
+            "eADMSPUB_DataDictionary": "data_dictionary",
+            "Country": "country",
+            "NTSB_Admin": "ntsb_admin",
+            "Findings": "findings",
+            "Occurrences": "occurrences",
+        },
+    ),
+    BronzeSource(
+        mdb_filename="Pre2008.mdb",
+        schema="bronze_pre2008",
+        ddl_file="003_bronze_pre2008.sql",
+        table_renames={
+            "Flight_Crew": "flight_crew",
+            "Events_Sequence": "events_sequence",
+            "eADMSPUB_DataDictionary": "data_dictionary",
+            "Country": "country",
+            "NTSB_Admin": "ntsb_admin",
+            "Findings": "findings",
+            "Occurrences": "occurrences",
+        },
+    ),
+    BronzeSource(
+        mdb_filename="PRE1982.MDB",
+        schema="bronze_pre1982",
+        ddl_file="004_bronze_pre1982.sql",
+        table_renames={
+            "tblFirstHalf": "tbl_first_half",
+            "tblSecondHalf": "tbl_second_half",
+            "tblOccurrences": "tbl_occurrences",
+            "tblSeqOfEvents": "tbl_seq_of_events",
+            "ct_Pre1982": "ct_codes",
+        },
+    ),
+]
+
+
+# ---------------------------------------------------------------------------
+# PostgreSQL reserved word handling
+# ---------------------------------------------------------------------------
+
+_PG_RESERVED = {
+    "table", "column", "order", "group", "user", "select", "type", "comment",
+    "key", "check", "primary", "default", "index", "constraint", "references",
+    "case", "when", "then", "else", "end", "and", "or", "not", "in", "is",
+    "null", "true", "false", "limit", "offset", "all", "cross", "join",
+    "from", "where", "having", "union", "create", "drop", "alter", "grant",
+    "values", "into", "set", "as", "on", "like", "between", "exists",
+    "partition", "row", "rows", "range", "both", "leading", "trailing",
+    "position", "current", "name", "action", "mode", "year", "month", "day",
+    "hour", "minute", "second", "zone", "sequence", "start", "authorization",
 }
 
 
-def _export_mdb_table_mdbtools(mdb_path: str, table_name: str) -> str:
-    """Export a table from MDB to CSV string using mdbtools (Linux)."""
-    result = subprocess.run(
-        ["mdb-export", mdb_path, table_name],
-        capture_output=True, text=True, check=True,
-    )
-    return result.stdout
-
-
-def _export_mdb_table_pyodbc(mdb_path: str, table_name: str,
-                             columns: list) -> list:
-    """Export a table from MDB using pyodbc (Windows)."""
-    import pyodbc
-    drv = "Microsoft Access Driver (*.mdb, *.accdb)"
-    conn = pyodbc.connect(f"DRIVER={{{drv}}};DBQ={mdb_path};")
-    cursor = conn.cursor()
-
-    col_list = ", ".join(f"[{c}]" for c in columns)
-    cursor.execute(f"SELECT {col_list} FROM [{table_name}]")
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
-
-def _clean_value(val) -> str:
-    """Convert a value to a clean string for COPY, handling NULLs."""
-    if val is None:
-        return ""
-    s = str(val).strip()
-    if s in ("None", ""):
-        return ""
-    # Escape tabs and newlines for TSV
-    s = s.replace("\t", " ").replace("\n", " ").replace("\r", " ")
+def _safe_col(name: str) -> str:
+    """Make a column name safe for PostgreSQL. Must match DDL generator logic."""
+    s = name.lower().replace(" ", "_").replace("/", "_")
+    if s in _PG_RESERVED:
+        return f'"column_{s}"'
     return s
 
 
-def load_table_pyodbc(pg_conn, mdb_path: str, mdb_table: str,
-                      bronze_table: str, columns: list, source_file: str):
-    """Load a single MDB table into bronze via pyodbc + COPY."""
-    logger.info(f"Loading {mdb_table} from {source_file} → {bronze_table}")
+# ---------------------------------------------------------------------------
+# MDB backend detection
+# ---------------------------------------------------------------------------
 
-    rows = _export_mdb_table_pyodbc(mdb_path, mdb_table, columns)
-    if not rows:
-        logger.warning(f"  No rows in {mdb_table}, skipping")
-        return 0
+def detect_backend() -> str:
+    """Detect available MDB reader: pyodbc (Windows) or mdbtools (Linux/Docker).
 
-    # Build TSV buffer with source_file appended
-    buf = io.StringIO()
-    for row in rows:
-        cleaned = [_clean_value(v) for v in row]
-        cleaned.append(source_file)  # _source_file
-        buf.write("\t".join(cleaned) + "\n")
-
-    buf.seek(0)
-
-    # Bronze column names (lowercase) + _source_file
-    bronze_cols = [c.lower() for c in columns] + ["_source_file"]
-    col_list = ", ".join(bronze_cols)
-
-    cursor = pg_conn.cursor()
-    cursor.copy_expert(
-        f"COPY {bronze_table} ({col_list}) FROM STDIN WITH (FORMAT text, DELIMITER E'\\t', NULL '')",
-        buf,
-    )
-    pg_conn.commit()
-    logger.info(f"  Loaded {len(rows):,} rows into {bronze_table}")
-    return len(rows)
-
-
-def load_table_mdbtools(pg_conn, mdb_path: str, mdb_table: str,
-                        bronze_table: str, columns: list, source_file: str):
-    """Load a single MDB table into bronze via mdbtools + COPY."""
-    logger.info(f"Loading {mdb_table} from {source_file} → {bronze_table}")
-
-    csv_data = _export_mdb_table_mdbtools(mdb_path, mdb_table)
-    if not csv_data.strip():
-        logger.warning(f"  No data in {mdb_table}, skipping")
-        return 0
-
-    reader = csv.DictReader(io.StringIO(csv_data))
-    buf = io.StringIO()
-    count = 0
-    for row in reader:
-        vals = [_clean_value(row.get(c, "")) for c in columns]
-        vals.append(source_file)
-        buf.write("\t".join(vals) + "\n")
-        count += 1
-
-    buf.seek(0)
-    bronze_cols = [c.lower() for c in columns] + ["_source_file"]
-    col_list = ", ".join(bronze_cols)
-
-    cursor = pg_conn.cursor()
-    cursor.copy_expert(
-        f"COPY {bronze_table} ({col_list}) FROM STDIN WITH (FORMAT text, DELIMITER E'\\t', NULL '')",
-        buf,
-    )
-    pg_conn.commit()
-    logger.info(f"  Loaded {count:,} rows into {bronze_table}")
-    return count
-
-
-def detect_backend():
-    """Detect whether to use mdbtools or pyodbc."""
+    Raises:
+        RuntimeError: If neither backend is available.
+    """
     if platform.system() == "Windows":
         try:
-            import pyodbc
+            import pyodbc  # noqa: F401
             return "pyodbc"
         except ImportError:
             pass
-    # Try mdbtools
     try:
         subprocess.run(["mdb-ver"], capture_output=True, check=True)
         return "mdbtools"
     except (FileNotFoundError, subprocess.CalledProcessError):
         pass
-    raise RuntimeError("Neither pyodbc nor mdbtools available")
+    raise RuntimeError(
+        "No MDB reader available. Install pyodbc (Windows) or mdbtools (Linux)."
+    )
 
 
-def ingest_modern_mdb(pg_conn, mdb_path: str, source_label: str,
-                      backend: str, tables: dict = None):
-    """Ingest a Pre2008 or avall MDB file into bronze tables."""
-    if tables is None:
-        tables = MODERN_TABLES
+# ---------------------------------------------------------------------------
+# MDB reading functions
+# ---------------------------------------------------------------------------
 
-    total = 0
-    for bronze_table, mdb_table in tables.items():
-        columns = COLUMN_MAP.get(bronze_table)
-        if not columns:
-            logger.warning(f"No column map for {bronze_table}, skipping")
-            continue
+def _get_mdb_tables(mdb_path: str, backend: str) -> list[str]:
+    """List all user tables in an MDB file."""
+    if backend == "pyodbc":
+        import pyodbc
+        with pyodbc.connect(
+            f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={mdb_path};"
+        ) as conn:
+            return [t.table_name for t in conn.cursor().tables(tableType="TABLE")]
+    else:
+        result = subprocess.run(
+            ["mdb-tables", "-1", mdb_path],
+            capture_output=True, text=True, check=True,
+        )
+        return [t.strip() for t in result.stdout.strip().split("\n") if t.strip()]
 
-        # For Pre2008, Findings doesn't have cm_inPc column
-        if bronze_table == "bronze.findings" and source_label == "Pre2008.mdb":
-            columns = [c for c in columns if c != "cm_inPc"]
+
+def _get_mdb_columns(mdb_path: str, table_name: str, backend: str) -> list[str]:
+    """Get column names for a table in an MDB file."""
+    if backend == "pyodbc":
+        import pyodbc
+        with pyodbc.connect(
+            f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={mdb_path};"
+        ) as conn:
+            return [c.column_name for c in conn.cursor().columns(table=table_name)]
+    else:
+        result = subprocess.run(
+            ["mdb-export", "-H", "-d", "|", mdb_path, table_name],
+            capture_output=True, text=True, check=True,
+        )
+        first_line = result.stdout.split("\n")[0]
+        return [c.strip() for c in first_line.split("|")]
+
+
+def _extract_rows(mdb_path: str, table_name: str, columns: list[str],
+                  backend: str) -> list:
+    """Extract all rows from an MDB table.
+
+    Args:
+        mdb_path: Path to the MDB file.
+        table_name: MDB table name.
+        columns: Column names to extract.
+        backend: 'pyodbc' or 'mdbtools'.
+
+    Returns:
+        List of row tuples/lists.
+    """
+    if backend == "pyodbc":
+        import pyodbc
+        with pyodbc.connect(
+            f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={mdb_path};"
+        ) as conn:
+            col_list = ", ".join(f"[{c}]" for c in columns)
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT {col_list} FROM [{table_name}]")
+            return cursor.fetchall()
+    else:
+        result = subprocess.run(
+            ["mdb-export", mdb_path, table_name],
+            capture_output=True, text=True, check=True,
+        )
+        reader = csv.DictReader(io.StringIO(result.stdout))
+        return [[row.get(c, "") for c in columns] for row in reader]
+
+
+# ---------------------------------------------------------------------------
+# PostgreSQL loading
+# ---------------------------------------------------------------------------
+
+def _clean_value(val) -> str:
+    """Convert a value to a clean string for PostgreSQL COPY TSV format.
+
+    - None → empty string (treated as NULL by COPY)
+    - Escapes backslashes, tabs, newlines (PostgreSQL COPY special chars)
+    """
+    if val is None:
+        return ""
+    s = str(val)
+    if s in ("None", ""):
+        return ""
+    return (
+        s.replace("\\", "\\\\")
+        .replace("\t", " ")
+        .replace("\n", " ")
+        .replace("\r", " ")
+        .strip()
+    )
+
+
+def _load_rows_to_pg(pg_conn, schema: str, pg_table: str, columns: list[str],
+                     rows: list, source_file: str) -> int:
+    """Bulk load rows into a PostgreSQL table using COPY.
+
+    Args:
+        pg_conn: PostgreSQL connection.
+        schema: Target schema (e.g. 'bronze_avall').
+        pg_table: Target table name (e.g. 'events').
+        columns: MDB column names (will be converted to safe PG names).
+        rows: Row data from MDB.
+        source_file: Lineage label (e.g. 'avall.mdb').
+
+    Returns:
+        Number of rows loaded.
+
+    Raises:
+        Exception: On COPY failure (caller handles rollback).
+    """
+    if not rows:
+        return 0
+
+    buf = io.StringIO()
+    for row in rows:
+        cleaned = [_clean_value(v) for v in row]
+        cleaned.append(source_file)
+        buf.write("\t".join(cleaned) + "\n")
+    buf.seek(0)
+
+    pg_cols = [_safe_col(c) for c in columns] + ["_source_file"]
+    col_list = ", ".join(pg_cols)
+    full_table = f"{schema}.{pg_table}"
+
+    with pg_conn.cursor() as cursor:
+        cursor.copy_expert(
+            f"COPY {full_table} ({col_list}) FROM STDIN "
+            f"WITH (FORMAT text, DELIMITER E'\\t', NULL '')",
+            buf,
+        )
+    pg_conn.commit()
+    return len(rows)
+
+
+# ---------------------------------------------------------------------------
+# Single-source ingestion
+# ---------------------------------------------------------------------------
+
+def ingest_mdb(pg_conn, mdb_path: str, source: BronzeSource,
+               backend: str) -> dict[str, int]:
+    """Ingest all tables from one MDB file into its bronze schema.
+
+    Args:
+        pg_conn: PostgreSQL connection.
+        mdb_path: Path to the MDB file.
+        source: BronzeSource configuration.
+        backend: 'pyodbc' or 'mdbtools'.
+
+    Returns:
+        Dict of {pg_table_name: rows_loaded} for reporting.
+    """
+    mdb_tables = _get_mdb_tables(mdb_path, backend)
+    logger.info(
+        f"Ingesting {source.mdb_filename} → {source.schema}.* "
+        f"({len(mdb_tables)} tables)"
+    )
+
+    results = {}
+    for mdb_table in mdb_tables:
+        pg_table = source.table_renames.get(mdb_table, mdb_table.lower())
 
         try:
-            if backend == "pyodbc":
-                n = load_table_pyodbc(
-                    pg_conn, mdb_path, mdb_table, bronze_table,
-                    columns, source_label,
+            columns = _get_mdb_columns(mdb_path, mdb_table, backend)
+            rows = _extract_rows(mdb_path, mdb_table, columns, backend)
+
+            if not rows:
+                logger.info(
+                    f"  {mdb_table:30s} → {pg_table:30s}   0 rows (empty)"
                 )
-            else:
-                n = load_table_mdbtools(
-                    pg_conn, mdb_path, mdb_table, bronze_table,
-                    columns, source_label,
-                )
-            total += n
+                results[pg_table] = 0
+                continue
+
+            n = _load_rows_to_pg(
+                pg_conn, source.schema, pg_table, columns, rows,
+                source.mdb_filename,
+            )
+            results[pg_table] = n
+            logger.info(
+                f"  {mdb_table:30s} → {pg_table:30s}   {n:>10,} rows"
+            )
+
         except Exception as e:
-            logger.error(f"  Error loading {mdb_table}: {e}")
+            logger.error(
+                f"  {mdb_table:30s} → {pg_table:30s}   ERROR: {e}"
+            )
+            pg_conn.rollback()
+            results[pg_table] = -1  # -1 signals error
 
-    return total
+    return results
 
 
-def run_sql_file(pg_conn, sql_path: Path):
+# ---------------------------------------------------------------------------
+# SQL file execution
+# ---------------------------------------------------------------------------
+
+def _run_sql_file(pg_conn, sql_path: Path):
     """Execute a SQL file against PostgreSQL."""
     logger.info(f"Executing {sql_path.name}")
     sql = sql_path.read_text(encoding="utf-8")
-    cursor = pg_conn.cursor()
-    cursor.execute(sql)
+    with pg_conn.cursor() as cursor:
+        cursor.execute(sql)
     pg_conn.commit()
 
 
+# ---------------------------------------------------------------------------
+# Full bronze pipeline
+# ---------------------------------------------------------------------------
+
 def run_bronze_ingestion(pg_conn, data_dir: Path, backend: str,
-                         mdb_paths: dict = None):
-    """Full bronze layer ingestion pipeline.
+                         mdb_paths: Optional[dict] = None) -> dict:
+    """Full bronze layer: create schemas, create tables, ingest all 3 sources.
 
     Args:
-        pg_conn: PostgreSQL connection
-        data_dir: directory containing MDB files
-        backend: 'pyodbc' or 'mdbtools'
-        mdb_paths: optional dict of {label: Path} from download module
+        pg_conn: PostgreSQL connection.
+        data_dir: Directory containing MDB files.
+        backend: 'pyodbc' or 'mdbtools'.
+        mdb_paths: Optional {filename: Path} from download module.
+
+    Returns:
+        Dict of {source_label: {table: row_count}} for full audit trail.
     """
     sql_dir = Path(__file__).resolve().parent.parent / "sql" / "bronze"
-
-    # Step 1: Create schemas
-    run_sql_file(pg_conn, sql_dir / "001_create_schemas.sql")
-
-    # Step 2: Create bronze tables
-    run_sql_file(pg_conn, sql_dir / "002_create_bronze_tables.sql")
-
-    # Resolve MDB paths
     if mdb_paths is None:
         mdb_paths = {}
 
-    # Step 3: Ingest Pre2008
-    pre2008_path = mdb_paths.get("Pre2008.mdb", data_dir / "Pre2008.mdb")
-    if pre2008_path.exists():
-        n = ingest_modern_mdb(pg_conn, str(pre2008_path), "Pre2008.mdb", backend)
-        logger.info(f"Pre2008 total: {n:,} rows")
-    else:
-        logger.warning(f"Pre2008.mdb not found at {pre2008_path}")
+    # Step 1: Create all schemas (bronze_avall, bronze_pre2008, bronze_pre1982, silver, gold)
+    _run_sql_file(pg_conn, sql_dir / "001_create_schemas.sql")
 
-    # Step 4: Ingest avall
-    avall_path = mdb_paths.get("avall.mdb", data_dir / "avall.mdb")
-    if avall_path.exists():
-        n = ingest_modern_mdb(pg_conn, str(avall_path), "avall.mdb", backend)
-        logger.info(f"avall total: {n:,} rows")
-    else:
-        logger.warning(f"avall.mdb not found at {avall_path}")
+    # Step 2-4: Create tables for each source
+    all_results = {}
+    for source in SOURCES:
+        _run_sql_file(pg_conn, sql_dir / source.ddl_file)
 
-    logger.info("Bronze ingestion complete")
+    # Step 5-7: Ingest each source
+    for source in SOURCES:
+        mdb_path = mdb_paths.get(source.mdb_filename, data_dir / source.mdb_filename)
+
+        if not mdb_path.exists():
+            logger.warning(f"{source.mdb_filename} not found at {mdb_path}")
+            all_results[source.mdb_filename] = {}
+            continue
+
+        results = ingest_mdb(pg_conn, str(mdb_path), source, backend)
+        all_results[source.mdb_filename] = results
+
+        total = sum(v for v in results.values() if v > 0)
+        errors = sum(1 for v in results.values() if v < 0)
+        logger.info(f"{source.mdb_filename} total: {total:,} rows ({errors} errors)")
+
+    # Summary
+    grand_total = sum(
+        v for source_results in all_results.values()
+        for v in source_results.values() if v > 0
+    )
+    total_errors = sum(
+        1 for source_results in all_results.values()
+        for v in source_results.values() if v < 0
+    )
+    logger.info(
+        f"Bronze ingestion complete: {grand_total:,} rows, "
+        f"{total_errors} errors across {len(SOURCES)} sources"
+    )
+
+    return all_results
