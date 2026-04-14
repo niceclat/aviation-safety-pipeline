@@ -39,31 +39,44 @@
 
 ### Bronze Layer
 
-**Design**: Mirror source MDB tables in PostgreSQL with added lineage metadata (`_source_file`, `_ingested_at`).
+**Design**: Each data source gets its own isolated schema — `bronze_avall`, `bronze_pre2008`, `bronze_pre1982`. No mixing, no transformation.
 
 **Key decisions**:
-- Preserve raw data exactly as-is — no transformations, no type casting beyond what PostgreSQL accepts.
-- Include `_source_file` to track whether each row came from `Pre2008.mdb` or `avall.mdb`. Critical for debugging and auditing.
-- Load lookup tables (`ct_seqevt`, `ct_iaids`, `states`) into bronze for downstream joins.
-- Use PostgreSQL `COPY` for bulk loading (10-100x faster than INSERT).
+- **One schema per source** — raw mirror with all columns as TEXT. Type enforcement happens in silver.
+- **Auto-discovered schema** — DDL generated from MDB column metadata, not manually written.
+- **Lineage metadata** — `_source_file` and `_ingested_at` on every row.
+- **PostgreSQL `COPY`** for bulk loading (10-100x faster than INSERT).
+- **Per-table error handling** — if one table fails, others continue (rollback per table).
+- **45 tables total** — 20 (avall) + 20 (Pre2008) + 5 (PRE1982, including 403-column flat tables).
+
+### Data Contract Layer
+
+**Design**: `src/contracts.py` (v1.0.0) is the single source of truth for all code translations and canonical mappings. Lookup tables loaded into PostgreSQL at `silver._lookup_*`.
+
+**Key decisions**:
+- Mappings defined in Python dicts, loaded to PostgreSQL via COPY, validated after loading.
+- Silver SQL JOINs against lookup tables — no hardcoded CASE statements for code translations.
+- 39 canonical manufacturer names, 73 prefix rules, validated against NTSB documentation and FAISS semantic similarity.
+- Versioned and idempotent — safe to re-run.
 
 ### Silver Layer
 
-**Design**: Three enriched tables produced by SQL transformations.
+**Design**: Unified canonical model from 3 bronze sources + NLP analysis.
 
-1. **`silver.events_enriched`**: Severity scores, weather categorization, time-era bucketing. Computed from bronze.events.
+1. **`silver.events_enriched`**: UNION ALL from 3 bronze event tables. Casts TEXT to proper types. Computes severity scores. Tags `source_era`. 180K events.
 
-2. **`silver.aircraft_normalized`**: The core normalization challenge. Canonical manufacturer names via CASE expressions. Model family extraction via `regexp_match()`. Filtered to Part 121 + 135 only.
+2. **`silver.aircraft_normalized`**: UNION ALL from 3 bronze aircraft tables with PRE1982 code mapping via lookup JOINs. Manufacturer normalization via `_lookup_manufacturer` JOIN. Model family extraction via `regexp_match()`. Filtered to Part 121 + 135 commercial only. 11.4K records.
 
-3. **`silver.findings_enriched`**: Unifies old and new findings systems. Pre2008's `seq_of_events` (numeric codes, joined to `ct_seqevt` for descriptions) merged with avall's `Findings` (CAST/ICAO taxonomy with text descriptions). Tagged with `findings_system` to track provenance.
+3. **`silver.findings_enriched`**: Merges 3 different findings code systems (CAST/ICAO, old numeric, legacy flat). Tagged with `findings_system` and `source_era`. 691K findings.
 
-4. **`silver.narrative_analysis`**: NLP-derived failure categories from Python (see Section 4). Written by the Python NLP module, not SQL, because regex over large text fields is better suited to Python.
+4. **`silver.narrative_analysis`**: NLP pipeline (see Section 4). Regex categorization + sentence embeddings + FAISS clustering. Stored with pgvector for SQL-level semantic search.
 
 **Key SQL techniques**:
-- CTEs for multi-step transformations
+- UNION ALL with matching column signatures across 3 sources
+- LEFT JOIN to `_lookup_manufacturer` for data-contract-driven normalization
+- `DISTINCT ON` with `ORDER BY LENGTH(prefix) DESC` for longest-prefix matching
 - `regexp_match()` for model family extraction
-- CASE expressions for code decoding and make normalization
-- UNION ALL to merge old/new findings systems
+- TEXT → typed casting with safe `NULLIF`/`COALESCE` patterns
 
 ### Gold Layer
 
@@ -97,23 +110,36 @@ Pre2008 and avall use fundamentally different findings taxonomies. Rather than f
 
 ---
 
-## 4. NLP Approach
+## 4. NLP Approach — Three Layers
 
-### Regex Pattern Matching (Not ML)
+The NLP pipeline is modular (`src/nlp/`), with each layer serving a different purpose:
 
-**Decision**: Use compiled regex patterns to extract 11 failure categories from narrative text.
+### Layer 1: Regex Categorization (`regex_categorizer.py`)
 
-**Rationale**:
-- The assignment says "sound engineering judgment matters more than complexity"
-- Insurance underwriting demands **explainability** — a regex rule that matches "engine failure" is auditable; a neural network classification is not
-- Coverage is adequate: patterns classify 40-80% of narratives depending on the database era
-- Categories map to underwriting risk factors: engine failure, weather, human factors, structural, etc.
+11 failure categories with compiled regex patterns. Classifies 30% of narratives.
 
-**Trade-off**: Lower recall than ML approaches. Mitigated by also using the structured Findings table (avall) which provides NTSB-assigned categories.
+**Why regex**: Explainable, auditable, deterministic. An underwriter can read the pattern that matched. Insurance demands transparency.
 
-### Text Severity Scoring
+### Layer 2: Sentence Embeddings (`embedding_analyzer.py`)
 
-Simple keyword-based severity scoring (1-5 scale) from narrative language. Not a replacement for the structured severity fields, but adds a signal from unstructured text that can surface cases where structured data understates severity.
+Dense vector embeddings via `all-MiniLM-L6-v2` (384 dimensions). Stored in pgvector for SQL-level semantic search.
+
+**Why embeddings**: Captures semantic meaning that regex misses. "Fuel starvation" and "ran out of gas" are different strings but the same concept.
+
+### Layer 3: FAISS Clustering + Anomaly Detection
+
+K-means clustering (50 clusters) on embeddings. Anomaly score = distance from nearest centroid.
+
+**Why FAISS**: Discovers patterns humans haven't categorized. The highest anomaly in the dataset is a coffee pot incident (score 0.86) — genuinely unusual and the kind of thing an underwriter should investigate.
+
+**How they complement each other**:
+- Regex = **what you know** (predefined failure modes)
+- Embeddings + FAISS = **what you don't know** (discover unlabeled patterns)
+- Anomaly detection = **what's unusual** (outliers worth investigating)
+
+### FAISS for Contract Validation
+
+FAISS was also used to validate manufacturer normalization — embedding raw make names and comparing against canonical names discovered 74 missed mappings, improving coverage from 94.5% to 97.6%.
 
 ---
 
@@ -121,8 +147,8 @@ Simple keyword-based severity scoring (1-5 scale) from narrative language. Not a
 
 ### Two-Service Compose
 
-- **postgres**: PostgreSQL 15 with health check. Data persisted in a named volume.
-- **pipeline**: Python 3.11-slim with mdbtools installed. Mounts `data/` (read-only) and `outputs/` (write). Runs `src/pipeline.py` as the entrypoint.
+- **postgres**: `pgvector/pgvector:pg15` — PostgreSQL 15 with pgvector extension for embedding storage. Health check. Data persisted in a named volume.
+- **pipeline**: Python 3.11-slim with `mdbtools` + `sentence-transformers` + `faiss-cpu`. Downloads data, runs full pipeline.
 
 **Credential swap**: All connection parameters via `.env`. Reviewers clone, create `.env` from `.env.example`, and `docker-compose up`. No code changes needed.
 
