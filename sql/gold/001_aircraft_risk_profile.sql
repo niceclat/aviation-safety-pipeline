@@ -1,13 +1,24 @@
 -- Gold layer: denormalized aircraft risk profile table.
 -- One row per model family. Self-contained — readable without querying other tables.
--- An underwriter opens this table to evaluate risk for any aircraft program.
+--
+-- Requirements (from PrincipalDE_External.md):
+--   1. Compare models by risk          -> risk_tier, risk_rank, weighted_severity_score
+--   2. Understand what drives risk      -> failure patterns, structured findings, NLP clusters
+--   3. Spot improving/deteriorating     -> severity_trend, severity_slope, frequency_slope
+--   4. Evidence to assign risk tier     -> all metrics + data_note
+--   5. Self-contained                   -> no JOINs needed to read this table
+--
+-- Questions answered:
+--   Q1 Severity trends per model       -> severity_trend, recent_severity, historical_severity
+--   Q2 Failure patterns                -> top_failure_*, pct_*, causal_finding_categories
+--   Q3 Narrative intelligence          -> NLP cluster insights, anomaly detection
+--   Q4 Risk comparison                 -> risk_tier (CRITICAL/HIGH/MEDIUM/LOW), risk_rank
 
 DROP TABLE IF EXISTS gold.aircraft_risk_profile CASCADE;
 
 CREATE TABLE gold.aircraft_risk_profile AS
 
 WITH commercial_events AS (
-    -- Join silver aircraft with enriched events for commercial ops
     SELECT
         a.ev_id,
         a.aircraft_key,
@@ -17,9 +28,10 @@ WITH commercial_events AS (
         a.acft_category,
         a.far_part,
         a.damage_score,
-        a.raw_model,
+        a.model_raw,
         a.num_eng,
         a.total_seats,
+        a.source_era,
         e.event_year,
         e.ev_date,
         e.ev_type,
@@ -30,13 +42,11 @@ WITH commercial_events AS (
         e.minor_injuries,
         e.uninjured,
         e.weather_category,
-        e.light_cond,
-        e._source_file AS event_source
+        e.light_cond
     FROM silver.aircraft_normalized a
     INNER JOIN silver.events_enriched e ON a.ev_id = e.ev_id
 ),
 
--- Aggregate per model family
 model_aggregates AS (
     SELECT
         ce.model_full,
@@ -45,6 +55,8 @@ model_aggregates AS (
         MAX(ce.acft_category)                               AS aircraft_category,
         STRING_AGG(DISTINCT ce.far_part, ', ' ORDER BY ce.far_part)
                                                             AS operation_types,
+        STRING_AGG(DISTINCT ce.source_era, ', ' ORDER BY ce.source_era)
+                                                            AS data_eras,
         -- Volume
         COUNT(*)                                            AS total_incidents,
         COUNT(*) FILTER (WHERE ce.ev_type = 'ACC')          AS total_accidents,
@@ -85,56 +97,42 @@ model_aggregates AS (
             / NULLIF(COUNT(*), 0), 2
         )                                                   AS pct_imc_conditions,
 
-        -- Median engine count and seats (model characteristics)
+        -- Incident distribution by era
+        COUNT(*) FILTER (WHERE ce.source_era = 'pre1982')   AS incidents_pre1982,
+        COUNT(*) FILTER (WHERE ce.source_era = 'pre2008')   AS incidents_pre2008,
+        COUNT(*) FILTER (WHERE ce.source_era = 'avall')     AS incidents_avall,
+
+        -- Model characteristics
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ce.num_eng)
                                                             AS median_engines,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ce.total_seats)
                                                             AS median_seats
     FROM commercial_events ce
     GROUP BY ce.model_full, ce.manufacturer, ce.model_family
-    HAVING COUNT(*) >= 10  -- minimum incidents for statistical relevance
+    HAVING COUNT(*) >= 10
 ),
 
--- Severity trend per model: compare last 10 years vs. prior
+-- Q1: Severity trend per model
 severity_trend AS (
     SELECT
         ce.model_full,
-        -- Recent period (last 10 years)
         ROUND(
             AVG(ce.injury_score * 0.6 + ce.damage_score * 0.4)
             FILTER (WHERE ce.event_year >= EXTRACT(YEAR FROM NOW()) - 10), 2
         )                                                   AS recent_severity,
-        -- Historical period (before last 10 years)
         ROUND(
             AVG(ce.injury_score * 0.6 + ce.damage_score * 0.4)
             FILTER (WHERE ce.event_year < EXTRACT(YEAR FROM NOW()) - 10), 2
         )                                                   AS historical_severity,
-        -- Linear regression: severity over time
         ROUND(REGR_SLOPE(
             ce.injury_score * 0.6 + ce.damage_score * 0.4,
             ce.event_year
-        )::NUMERIC, 4)                                      AS severity_slope,
-        -- Incident frequency trend
-        ROUND(REGR_SLOPE(
-            incident_count,
-            year
-        )::NUMERIC, 4)                                      AS frequency_slope
+        )::NUMERIC, 4)                                      AS severity_slope
     FROM commercial_events ce
-    -- Subquery for annual incident counts per model
-    LEFT JOIN LATERAL (
-        SELECT
-            ce2.event_year AS year,
-            COUNT(*)::NUMERIC AS incident_count
-        FROM commercial_events ce2
-        WHERE ce2.model_full = ce.model_full
-          AND ce2.event_year = ce.event_year
-        GROUP BY ce2.event_year
-        LIMIT 1
-    ) annual ON TRUE
     GROUP BY ce.model_full
 ),
 
--- Top failure categories from NLP
+-- Q2: Failure patterns from NLP regex (exclude NULL = uncategorized)
 failure_patterns AS (
     SELECT
         a.model_full,
@@ -144,7 +142,6 @@ failure_patterns AS (
             PARTITION BY a.model_full
             ORDER BY COUNT(*) DESC
         ) AS rank,
-        -- Failure type percentages
         ROUND(100.0 * COUNT(*) FILTER (WHERE na.has_engine_failure)
             / NULLIF(COUNT(*), 0), 1)                       AS pct_engine,
         ROUND(100.0 * COUNT(*) FILTER (WHERE na.has_weather_factor)
@@ -160,32 +157,31 @@ failure_patterns AS (
     FROM silver.aircraft_normalized a
     LEFT JOIN silver.narrative_analysis na
         ON a.ev_id = na.ev_id AND a.aircraft_key = na.aircraft_key
+    WHERE na.primary_category IS NOT NULL
     GROUP BY a.model_full, na.primary_category
 ),
 
--- Pivot top 3 failure categories per model
 top_failures AS (
     SELECT
         fp.model_full,
-        MAX(fp.primary_category) FILTER (WHERE fp.rank = 1)     AS top_failure_1,
-        MAX(fp.cat_count) FILTER (WHERE fp.rank = 1)            AS top_failure_1_count,
-        MAX(fp.primary_category) FILTER (WHERE fp.rank = 2)     AS top_failure_2,
-        MAX(fp.cat_count) FILTER (WHERE fp.rank = 2)            AS top_failure_2_count,
-        MAX(fp.primary_category) FILTER (WHERE fp.rank = 3)     AS top_failure_3,
-        MAX(fp.cat_count) FILTER (WHERE fp.rank = 3)            AS top_failure_3_count,
-        -- Aggregate failure type percentages
-        MAX(fp.pct_engine)                                      AS pct_engine_failure,
-        MAX(fp.pct_weather)                                     AS pct_weather_related,
-        MAX(fp.pct_human)                                       AS pct_human_factor,
-        MAX(fp.pct_fire)                                        AS pct_fire_related,
-        MAX(fp.pct_structural)                                  AS pct_structural_failure,
-        MAX(fp.pct_maintenance)                                 AS pct_maintenance_related
+        MAX(fp.primary_category) FILTER (WHERE fp.rank = 1) AS top_failure_1,
+        MAX(fp.cat_count) FILTER (WHERE fp.rank = 1)        AS top_failure_1_count,
+        MAX(fp.primary_category) FILTER (WHERE fp.rank = 2) AS top_failure_2,
+        MAX(fp.cat_count) FILTER (WHERE fp.rank = 2)        AS top_failure_2_count,
+        MAX(fp.primary_category) FILTER (WHERE fp.rank = 3) AS top_failure_3,
+        MAX(fp.cat_count) FILTER (WHERE fp.rank = 3)        AS top_failure_3_count,
+        MAX(fp.pct_engine)                                  AS pct_engine_failure,
+        MAX(fp.pct_weather)                                 AS pct_weather_related,
+        MAX(fp.pct_human)                                   AS pct_human_factor,
+        MAX(fp.pct_fire)                                    AS pct_fire_related,
+        MAX(fp.pct_structural)                              AS pct_structural_failure,
+        MAX(fp.pct_maintenance)                             AS pct_maintenance_related
     FROM failure_patterns fp
     WHERE fp.rank <= 3
     GROUP BY fp.model_full
 ),
 
--- Top structured findings from the Findings table
+-- Q2 continued: Structured findings from NTSB
 structured_findings AS (
     SELECT
         a.model_full,
@@ -203,9 +199,25 @@ structured_findings AS (
     LEFT JOIN silver.findings_enriched fe
         ON a.ev_id = fe.ev_id AND a.aircraft_key = fe.aircraft_key
     GROUP BY a.model_full
+),
+
+-- Q3: Narrative intelligence from FAISS clustering
+narrative_intelligence AS (
+    SELECT
+        a.model_full,
+        COUNT(DISTINCT na.cluster_id)                       AS n_distinct_clusters,
+        ROUND(AVG(na.anomaly_score)::NUMERIC, 4)            AS avg_anomaly_score,
+        COUNT(*) FILTER (WHERE na.anomaly_score > 0.7)      AS high_anomaly_count,
+        ROUND(100.0 * COUNT(*) FILTER (WHERE na.n_categories > 0)
+            / NULLIF(COUNT(*), 0), 1)                       AS pct_nlp_categorized,
+        MODE() WITHIN GROUP (ORDER BY na.cluster_id)        AS dominant_cluster_id
+    FROM silver.aircraft_normalized a
+    LEFT JOIN silver.narrative_analysis na
+        ON a.ev_id = na.ev_id AND a.aircraft_key = na.aircraft_key
+    GROUP BY a.model_full
 )
 
--- Final assembly
+-- Final assembly: self-contained risk profile
 SELECT
     -- Identity
     ma.manufacturer,
@@ -228,7 +240,13 @@ SELECT
         / NULLIF(ma.years_with_incidents, 0), 1
     )                                                       AS avg_incidents_per_year,
 
-    -- Severity metrics
+    -- Data coverage
+    ma.data_eras,
+    ma.incidents_pre1982,
+    ma.incidents_pre2008,
+    ma.incidents_avall,
+
+    -- Q1: Severity metrics
     ma.fatal_event_count,
     ma.serious_event_count,
     ma.total_fatalities,
@@ -240,7 +258,7 @@ SELECT
     ma.avg_damage_score,
     ma.weighted_severity_score,
 
-    -- Trend analysis
+    -- Q1: Trend analysis
     st.recent_severity,
     st.historical_severity,
     CASE
@@ -253,9 +271,8 @@ SELECT
         ELSE 'STABLE'
     END                                                     AS severity_trend,
     st.severity_slope,
-    st.frequency_slope,
 
-    -- Failure patterns (NLP-derived)
+    -- Q2: Failure patterns (NLP regex-derived)
     tf.top_failure_1,
     tf.top_failure_1_count,
     tf.top_failure_2,
@@ -269,16 +286,23 @@ SELECT
     tf.pct_structural_failure,
     tf.pct_maintenance_related,
 
-    -- Structured findings summary
+    -- Q2: Structured findings
     sf.causal_finding_categories,
     sf.aircraft_causes,
     sf.personnel_causes,
     sf.environmental_causes,
 
+    -- Q3: Narrative intelligence (FAISS-derived)
+    ni.n_distinct_clusters,
+    ni.avg_anomaly_score,
+    ni.high_anomaly_count,
+    ni.pct_nlp_categorized,
+    ni.dominant_cluster_id,
+
     -- Weather
     ma.pct_imc_conditions,
 
-    -- Risk tier (quartile-based composite)
+    -- Q4: Risk tier (quartile-based composite)
     NTILE(4) OVER (
         ORDER BY ma.weighted_severity_score DESC,
                  ma.fatality_rate_pct DESC,
@@ -295,7 +319,6 @@ SELECT
         WHEN 4 THEN 'LOW'
     END                                                     AS risk_tier,
 
-    -- Rank among all models
     RANK() OVER (
         ORDER BY ma.weighted_severity_score DESC,
                  ma.fatality_rate_pct DESC
@@ -312,4 +335,5 @@ FROM model_aggregates ma
 LEFT JOIN severity_trend st ON ma.model_full = st.model_full
 LEFT JOIN top_failures tf ON ma.model_full = tf.model_full
 LEFT JOIN structured_findings sf ON ma.model_full = sf.model_full
+LEFT JOIN narrative_intelligence ni ON ma.model_full = ni.model_full
 ORDER BY ma.weighted_severity_score DESC, ma.total_incidents DESC;
