@@ -110,33 +110,17 @@ WITH raw_aircraft AS (
     WHERE f.type_operator IN ('E', 'P', 'N')  -- commercial ops only
 ),
 
+-- Normalize manufacturer using the lookup table from contracts.py.
+-- JOIN on prefix match: UPPER(make_raw) LIKE (match_prefix || '%')
+-- This stays in sync with the data contract — no hardcoded CASE needed.
 make_normalized AS (
-    SELECT
+    SELECT DISTINCT ON (r.ev_id, r.aircraft_key)
         r.*,
-        CASE
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'BOEING%' THEN 'BOEING'
-            WHEN UPPER(TRIM(r.make_raw)) IN ('AIRBUS','AIRBUS INDUSTRIE')
-                OR UPPER(TRIM(r.make_raw)) LIKE 'AIRBUS%' THEN 'AIRBUS'
-            WHEN UPPER(TRIM(r.make_raw)) IN ('BOMBARDIER','BOMBARDIER INC','CANADAIR','DE HAVILLAND CANADA')
-                OR UPPER(TRIM(r.make_raw)) LIKE 'BOMBARDIER%'
-                OR UPPER(TRIM(r.make_raw)) LIKE 'CANADAIR%' THEN 'BOMBARDIER'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'EMBRAER%' THEN 'EMBRAER'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'CESSNA%'
-                OR UPPER(TRIM(r.make_raw)) LIKE 'TEXTRON%' THEN 'CESSNA'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'BEECH%'
-                OR UPPER(TRIM(r.make_raw)) LIKE 'HAWKER BEECH%' THEN 'BEECHCRAFT'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'PIPER%' THEN 'PIPER'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'BELL%' THEN 'BELL'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'MCDONNELL%'
-                OR UPPER(TRIM(r.make_raw)) LIKE 'DOUGLAS%' THEN 'MCDONNELL DOUGLAS'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'LOCKHEED%' THEN 'LOCKHEED'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'DEHAVILLAND%'
-                OR UPPER(TRIM(r.make_raw)) LIKE 'DE HAVILLAND%' THEN 'DEHAVILLAND'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'SIKORSKY%' THEN 'SIKORSKY'
-            WHEN UPPER(TRIM(r.make_raw)) LIKE 'EUROCOPTER%' THEN 'EUROCOPTER'
-            ELSE UPPER(TRIM(COALESCE(r.make_raw, 'UNKNOWN')))
-        END AS manufacturer
+        COALESCE(lm.canonical_name, UPPER(TRIM(COALESCE(r.make_raw, 'UNKNOWN')))) AS manufacturer
     FROM raw_aircraft r
+    LEFT JOIN silver._lookup_manufacturer lm
+        ON UPPER(TRIM(r.make_raw)) LIKE (lm.match_prefix || '%')
+    ORDER BY r.ev_id, r.aircraft_key, LENGTH(lm.match_prefix) DESC NULLS LAST
 ),
 
 model_extracted AS (
