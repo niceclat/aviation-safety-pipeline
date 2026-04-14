@@ -283,7 +283,37 @@ Of these findings, 1,966 are coded as **Causes** and 559 as **Factors**.
 
 ---
 
-## 8. Data Quality Issues
+## 8. Aircraft Usage and Exposure
+
+The NTSB data captures **incident counts** but not **exposure data** (flight hours, departures, fleet size). The `afm_hrs` (airframe hours) field exists in the `aircraft` table but is sparsely populated and reflects the individual aircraft at time of incident, not fleet-wide utilization.
+
+**Why this matters for risk**: A model with 100 incidents from 10,000 flight hours is riskier than one with 100 incidents from 1,000,000 flight hours. Without exposure normalization, our risk profile measures **absolute** incident frequency, not **rate-based** risk.
+
+**Mitigation**: The gold table includes `avg_incidents_per_year` and `years_with_incidents` as proxies for exposure. Models with longer operational histories naturally accumulate more incidents — the severity trend analysis (`REGR_SLOPE`) accounts for this by measuring change over time rather than absolute counts.
+
+**Future work**: Supplement with FAA fleet utilization data (Operations and Activity reports) to compute incidents per 100,000 flight hours — the standard industry risk metric.
+
+---
+
+## 9. Incident Distribution
+
+### By Time
+- **Pre-1982**: 87,039 events — highest volume era (general aviation boom)
+- **1982-2007**: 63,002 events — declining as safety improved
+- **2008-present**: 30,358 events — lowest, reflecting modern safety standards
+
+### By Geography
+- Events concentrated in US states with high aviation activity: California, Texas, Florida, Alaska
+- PRE1982 data is US-only; Pre2008 and avall include foreign-registered aircraft
+
+### By Conditions
+- **VMC** (visual conditions): majority of incidents across all eras
+- **IMC** (instrument conditions): higher severity when they occur — higher fatality rate
+- The gold table includes `pct_imc_conditions` per model to flag weather-sensitive aircraft
+
+---
+
+## 10. Data Quality Issues
 
 1. **Aircraft naming inconsistency** — free text make/model requires normalization (see Section 4)
 2. **Null values** — many fields have NULL or missing data, especially in older records

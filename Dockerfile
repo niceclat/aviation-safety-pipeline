@@ -1,9 +1,8 @@
 FROM python:3.11-slim
 
 # Install mdbtools for reading Microsoft Access .mdb files
-# and curl for downloading NTSB data
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends mdbtools curl && \
+    apt-get install -y --no-install-recommends mdbtools && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -13,5 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ src/
 COPY sql/ sql/
+
+ENV PYTHONUNBUFFERED=1
+ENV OUTPUT_DIR=/outputs
 
 CMD ["python", "src/pipeline.py"]
