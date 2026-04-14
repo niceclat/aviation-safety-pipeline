@@ -108,7 +108,7 @@ The FAR part under which an aircraft operates determines its relevance to commer
 | 129        | Foreign Carriers     | 371           | 384         | Medium -- foreign ops in US   |
 | NUSN/NUSC  | Non-US registered    | 1,154         | 3,895       | Low -- outside US jurisdiction|
 
-**Scope decision:** Focus on **Part 121 + Part 135** operations. These are the commercial operations that Meridian Aero Underwriters would price warranties and maintenance contracts for. Combined: **6,816 aircraft records** across both databases.
+**Scope decision:** Focus on **Part 121 + Part 135** operations (and PRE1982 equivalents: Air Taxi, Contract Carrier, Intrastate Carrier). These are the commercial operations that Meridian Aero Underwriters would price warranties and maintenance contracts for. Combined: **11,386 aircraft records** across all three databases (1,857 avall + 4,959 Pre2008 + 4,570 PRE1982).
 
 ---
 
@@ -149,7 +149,7 @@ After normalization, **175 model families** have 10+ incidents in the combined d
 | BOEING 767                | 144       | Part 121          |
 | BOEING 747                | 125       | Part 121          |
 
-The assignment requires "at least 2 aircraft models with sufficient incident volume" -- we have 175.
+The assignment requires "at least 2 aircraft models with sufficient incident volume" -- we have 173.
 
 ---
 
@@ -239,17 +239,15 @@ The `Findings` table uses a hierarchical CAST/ICAO taxonomy with 5 levels:
 category_no / subcategory_no / section_no / subsection_no / modifier_no
 ```
 
-Top-level categories for commercial operations (4,341 findings):
+Top-level categories for commercial operations (4,721 findings from avall):
 
-| Code | Category              | Count | %     |
-|------|-----------------------|-------|-------|
-| 02   | Personnel issues      | 1,706 | 39.3% |
-| 01   | Aircraft              | 1,228 | 28.3% |
-| 03   | Environmental issues  | 1,052 | 24.2% |
-| 04   | Organizational issues | 292   | 6.7%  |
-| 05   | Not determined        | 63    | 1.5%  |
-
-Of these findings, 1,966 are coded as **Causes** and 559 as **Factors**.
+| Code | Category              | Count | Causes | Factors |
+|------|-----------------------|-------|--------|---------|
+| 02   | Personnel issues      | 1,998 | 1,021  | 293     |
+| 01   | Aircraft              | 1,246 | 672    | 76      |
+| 03   | Environmental issues  | 1,082 | 343    | 115     |
+| 04   | Organizational issues | 331   | 47     | 129     |
+| 05   | Not determined        | 64    | 44     | 3       |
 
 ---
 
