@@ -100,6 +100,12 @@ AIRCRAFT_CATEGORY_MAP = {
 }
 
 # Severity scoring weights
+# Composite: weighted_severity = injury_score * INJURY_WEIGHT + damage_score * DAMAGE_WEIGHT
+# Rationale: human harm weighted higher than property damage for insurance underwriting.
+# These are tunable parameters — adjust based on actuarial guidance.
+INJURY_WEIGHT = 0.6
+DAMAGE_WEIGHT = 0.4
+
 INJURY_SEVERITY_SCORES = {
     "FATL": 4,
     "SERS": 3,

@@ -128,11 +128,83 @@ Simple keyword-based severity scoring (1-5 scale) from narrative language. Not a
 
 ---
 
-## 6. What I Would Add With More Time
+## 6. Gold Table: How It Answers Each Question
 
-1. **PRE1982 ingestion**: Map the flat 400-column schema to the modern normalized tables. Would add 87K events and extend trend analysis back to 1962.
-2. **CAROL API supplementation**: Fetch Analysis narratives (not in MDB) for richer NLP input.
-3. **spaCy NER**: Extract specific aircraft components and failure modes from narratives.
-4. **Exposure normalization**: Incident counts per flight-hour or departure (requires fleet utilization data from FAA).
-5. **Automated testing**: pytest suite validating row counts, schema integrity, and severity score ranges.
-6. **Incremental loading**: Support weekly delta updates (`up[DD][MON].zip`) for production use.
+### Q1: Severity trends — How has severity changed over time per model?
+
+| Column | How it answers |
+|---|---|
+| `severity_trend` | IMPROVING / STABLE / WORSENING / INSUFFICIENT_DATA — plain label |
+| `severity_slope` | Linear regression via `REGR_SLOPE()` — negative = improving, positive = worsening |
+| `recent_severity` | Average weighted severity for last 10 years |
+| `historical_severity` | Average weighted severity for prior years |
+
+Trend classification: if recent is >0.2 higher than historical → WORSENING. >0.2 lower → IMPROVING. Otherwise STABLE. Threshold of 0.2 is configurable.
+
+### Q2: Failure patterns — What failures appear most frequently?
+
+| Column | Source | How it answers |
+|---|---|---|
+| `top_failure_1/2/3` | NLP regex on narratives | Top 3 failure categories per model |
+| `pct_engine_failure`, `pct_weather_related`, etc. | NLP regex | Percentage breakdown by failure type |
+| `causal_finding_categories` | NTSB structured Findings | Official cause categories |
+| `aircraft_causes`, `personnel_causes`, `environmental_causes` | Findings table | Counts by cause type |
+
+Patterns differ across models: BOEING 737 top failure = weather; BELL 206 = engine_failure.
+
+### Q3: Narrative intelligence — What does NLP add beyond structured data?
+
+| Column | Source | How it answers |
+|---|---|---|
+| `n_distinct_clusters` | FAISS k-means on sentence embeddings | How many semantic themes for this model |
+| `avg_anomaly_score` | FAISS distance to centroid | How unusual this model's incidents are (0-1, higher = more atypical) |
+| `high_anomaly_count` | FAISS anomaly > 0.7 | Count of outlier incidents worth investigating |
+| `pct_nlp_categorized` | Regex hit rate | What percentage of narratives matched known failure patterns |
+| `dominant_cluster_id` | FAISS mode cluster | Most common semantic group for this model |
+
+Additionally, embeddings stored in pgvector enable SQL-level semantic search:
+```sql
+-- Find incidents most similar to a specific narrative
+SELECT ev_id, 1 - (embedding <=> query_embedding) AS similarity
+FROM silver.narrative_analysis
+ORDER BY embedding <=> query_embedding
+LIMIT 10;
+```
+
+### Q4: Risk comparison — quantified for non-technical stakeholders
+
+| Column | How it answers |
+|---|---|
+| `risk_tier` | CRITICAL / HIGH / MEDIUM / LOW — plain labels anyone can act on |
+| `risk_rank` | 1 = highest risk across all 163 models |
+| `weighted_severity_score` | Composite: `injury_score * 0.6 + damage_score * 0.4` |
+| `fatality_rate_pct` | Simple percentage: "X% of incidents had fatalities" |
+| `destruction_rate_pct` | Simple percentage: "X% of incidents destroyed the aircraft" |
+| `data_note` | "Based on 484 incidents (1962-2026)" — evidence context |
+
+### Severity scoring rationale
+
+```
+weighted_severity = injury_score * INJURY_WEIGHT + damage_score * DAMAGE_WEIGHT
+```
+
+Where:
+- `INJURY_WEIGHT = 0.6` — human harm is the primary underwriting concern
+- `DAMAGE_WEIGHT = 0.4` — property damage is secondary
+- Defined in `src/contracts.py` as tunable parameters
+
+These weights are an **assumption**, not actuarial fact. In production, an actuary would calibrate them against historical loss data. The pipeline makes them configurable so they can be adjusted without code changes.
+
+Risk tiers use `NTILE(4)` — quartile-based, so each tier contains roughly 25% of models. This ensures balanced distribution rather than arbitrary thresholds.
+
+---
+
+## 7. What I Would Add With More Time
+
+1. **CAROL API supplementation**: Fetch Analysis narratives (not in MDB) for richer NLP input.
+2. **spaCy NER**: Extract specific aircraft components and failure modes from narratives.
+3. **Exposure normalization**: Incident counts per flight-hour or departure (requires fleet utilization data from FAA).
+4. **Incremental loading**: Support weekly delta updates (`up[DD][MON].zip`) for production use.
+5. **Graph analysis**: Apache AGE or NetworkX for visualizing relationships between aircraft models, failure modes, and operators.
+6. **Actuarial calibration**: Replace assumed severity weights (0.6/0.4) with weights derived from historical loss data.
+7. **PRE1982 full column mapping**: Currently maps ~30 of 403 columns. Extend to include crashworthiness, equipment, and detailed weather data.
