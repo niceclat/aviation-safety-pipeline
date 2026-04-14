@@ -123,7 +123,7 @@ def detect_backend() -> str:
         except ImportError:
             pass
     try:
-        subprocess.run(["mdb-ver"], capture_output=True, check=True)
+        subprocess.run(["mdb-ver", "--version"], capture_output=True, check=True)
         return "mdbtools"
     except (FileNotFoundError, subprocess.CalledProcessError):
         pass
@@ -161,12 +161,13 @@ def _get_mdb_columns(mdb_path: str, table_name: str, backend: str) -> list[str]:
         ) as conn:
             return [c.column_name for c in conn.cursor().columns(table=table_name)]
     else:
+        # Use mdb-export WITH header to read column names from the CSV header row
         result = subprocess.run(
-            ["mdb-export", "-H", "-d", "|", mdb_path, table_name],
+            ["mdb-export", mdb_path, table_name],
             capture_output=True, text=True, check=True,
         )
-        first_line = result.stdout.split("\n")[0]
-        return [c.strip() for c in first_line.split("|")]
+        header = result.stdout.split("\n")[0]
+        return [c.strip().strip('"') for c in header.split(",")]
 
 
 def _extract_rows(mdb_path: str, table_name: str, columns: list[str],
