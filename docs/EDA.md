@@ -259,6 +259,10 @@ Using regex pattern matching against 11 failure categories, we can classify narr
 
 This approach is intentionally practical — regex pattern matching is explainable, auditable, and appropriate for insurance underwriting where transparency matters more than model complexity.
 
+### Where is failure information — structured or text?
+
+**Both.** The structured `Findings` table provides NTSB-assigned cause categories, but only for avall (2008+). Pre2008 uses a different numeric code system (`seq_of_events`). PRE1982 has only short text in `REMARKS` and `CAUSE` fields. The NLP pipeline bridges this gap by extracting structured failure categories from narrative text across all 3 eras, providing consistent categorization regardless of which findings system the source uses.
+
 ---
 
 ## 7. Findings Code Structure (avall only)
