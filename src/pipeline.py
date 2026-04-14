@@ -197,18 +197,76 @@ def main():
     logger.info(f"Connected to {PG_HOST}:{PG_PORT}/{PG_DB}")
 
     try:
-        if run_all or args.bronze:
-            run_bronze(conn)
-        if run_all or args.contracts:
-            run_contracts(conn)
-        if run_all or args.silver:
-            run_silver(conn)
-        if run_all or args.gold:
-            run_gold(conn)
-        if run_all or args.export:
-            run_export(conn)
-        if args.quality:
-            run_quality(conn)
+        from src.governance import PipelineRun, update_table_freshness
+        from src.contracts import CONTRACT_VERSION
+        from src.ingest import detect_backend
+
+        backend = detect_backend() if (run_all or args.bronze) else ""
+
+        with PipelineRun(conn, contract_version=CONTRACT_VERSION, backend=backend) as run:
+
+            if run_all or args.bronze:
+                with run.step("download") as step:
+                    from src.download import download_ntsb_data
+                    mdb_paths = download_ntsb_data(DATA_DIR)
+                    step.rows_affected = len(mdb_paths)
+
+                with run.step("bronze") as step:
+                    from src.ingest import run_bronze_ingestion
+                    results = run_bronze_ingestion(conn, DATA_DIR, backend, mdb_paths)
+                    total = sum(v for r in results.values() for v in r.values() if v > 0)
+                    step.rows_affected = total
+                    run.bronze_rows = total
+
+            if run_all or args.contracts:
+                with run.step("contracts") as step:
+                    from src.contracts import load_lookups_to_pg, validate_lookups
+                    results = load_lookups_to_pg(conn)
+                    validate_lookups(conn)
+                    step.rows_affected = sum(results.values())
+
+            if run_all or args.silver:
+                with run.step("silver_sql") as step:
+                    from src.transform import run_silver as _run_silver
+                    _run_silver(conn)
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT COUNT(*) FROM silver.events_enriched")
+                        step.rows_affected = cur.fetchone()[0]
+                        run.silver_rows = step.rows_affected
+
+                with run.step("nlp") as step:
+                    from src.nlp.pipeline import run_narrative_analysis
+                    step.rows_affected = run_narrative_analysis(conn, enable_embeddings=True)
+                    run.nlp_rows = step.rows_affected
+
+            if run_all or args.gold:
+                with run.step("gold") as step:
+                    from src.transform import run_gold as _run_gold
+                    _run_gold(conn)
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT COUNT(*) FROM gold.aircraft_risk_profile")
+                        step.rows_affected = cur.fetchone()[0]
+                        run.gold_rows = step.rows_affected
+
+            if run_all or args.export:
+                with run.step("export") as step:
+                    run_export(conn)
+
+            if args.quality:
+                with run.step("quality") as step:
+                    run_quality(conn)
+
+            # Update table freshness
+            if run_all:
+                for schema, table in [
+                    ("silver", "events_enriched"),
+                    ("silver", "aircraft_normalized"),
+                    ("silver", "findings_enriched"),
+                    ("silver", "narrative_analysis"),
+                    ("gold", "aircraft_risk_profile"),
+                ]:
+                    update_table_freshness(conn, run.run_id, schema, table)
+
     except Exception as e:
         logger.error(f"Pipeline failed: {e}", exc_info=True)
         conn.rollback()
